@@ -1,0 +1,232 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id         BigInt   @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(150)
+  phone      String?  @unique @db.VarChar(20)
+  password   String   @db.VarChar(255)
+  role       Role     @default(CUSTOMER)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  addresses              Address[]
+  cart                   Cart?
+  wishlist               Wishlist[]
+  orders                 Order[]
+  created_status_history OrderStatusHistory[]
+
+  @@map("users")
+}
+
+model Address {
+  id            BigInt   @id @default(autoincrement())
+  user_id       BigInt
+  full_name     String   @db.VarChar(100)
+  phone         String   @db.VarChar(20)
+  address_line1 String   @db.VarChar(255)
+  address_line2 String?  @db.VarChar(255)
+  city          String   @db.VarChar(100)
+  state         String   @db.VarChar(100)
+  country       String   @db.VarChar(100)
+  postal_code   String   @db.VarChar(20)
+  is_default    Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user   User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+model Category {
+  id         BigInt   @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  slug       String   @unique @db.VarChar(150)
+  parent_id  BigInt?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryToCategory", fields: [parent_id], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryToCategory")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                BigInt   @id @default(autoincrement())
+  category_id       BigInt
+  name              String   @db.VarChar(255)
+  slug              String   @unique @db.VarChar(255)
+  short_description String?  @db.Text
+  description       String?  @db.LongText
+  price             Decimal  @db.Decimal(10, 2)
+  quantity          Int
+  sku               String   @unique @db.VarChar(100)
+  thumbnail_url     String?  @db.VarChar(500)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  category    Category       @relation(fields: [category_id], references: [id])
+  images      ProductImage[]
+  wishlists   Wishlist[]
+  cart_items  CartItem[]
+  order_items OrderItem[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id            BigInt   @id @default(autoincrement())
+  product_id    BigInt
+  image_url     String   @db.VarChar(500)
+  display_order Int
+  created_at    DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model Wishlist {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  product_id BigInt
+  created_at DateTime @default(now())
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, product_id])
+  @@map("wishlists")
+}
+
+model Cart {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user  User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id         BigInt   @id @default(autoincrement())
+  cart_id    BigInt
+  product_id BigInt
+  quantity   Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  cart    Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([cart_id, product_id])
+  @@map("cart_items")
+}
+
+model Order {
+  id              BigInt      @id @default(autoincrement())
+  order_number    String      @unique @db.VarChar(50)
+  user_id         BigInt
+  address_id      BigInt
+  subtotal        Decimal     @db.Decimal(10, 2)
+  shipping_charge Decimal     @db.Decimal(10, 2)
+  total_amount    Decimal     @db.Decimal(10, 2)
+  status          OrderStatus @default(PENDING)
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+
+  user           User                 @relation(fields: [user_id], references: [id])
+  address        Address              @relation(fields: [address_id], references: [id])
+  items          OrderItem[]
+  payments       Payment[]
+  status_history OrderStatusHistory[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            BigInt   @id @default(autoincrement())
+  order_id      BigInt
+  product_id    BigInt
+  product_name  String   @db.VarChar(255)
+  product_price Decimal  @db.Decimal(10, 2)
+  quantity      Int
+  total_price   Decimal  @db.Decimal(10, 2)
+  created_at    DateTime @default(now())
+
+  order   Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id])
+
+  @@map("order_items")
+}
+
+model Payment {
+  id                  BigInt        @id @default(autoincrement())
+  order_id            BigInt
+  razorpay_order_id   String?       @db.VarChar(255)
+  razorpay_payment_id String?       @db.VarChar(255)
+  razorpay_signature  String?       @db.VarChar(500)
+  amount              Decimal       @db.Decimal(10, 2)
+  payment_method      String?       @db.VarChar(50)
+  status              PaymentStatus @default(PENDING)
+  paid_at             DateTime?
+  created_at          DateTime      @default(now())
+  updated_at          DateTime      @updatedAt
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model OrderStatusHistory {
+  id         BigInt   @id @default(autoincrement())
+  order_id   BigInt
+  status     String   @db.VarChar(50)
+  remarks    String?  @db.VarChar(255)
+  created_by BigInt
+  created_at DateTime @default(now())
+
+  order   Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  creator User  @relation(fields: [created_by], references: [id])
+
+  @@map("order_status_history")
+}
