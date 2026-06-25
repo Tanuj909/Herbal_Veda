@@ -36,3 +36,23 @@ export const countUsersByRole = async (role) => {
     where: { role },
   });
 };
+
+export const findAllUsers = async (filters = {}) => {
+  const where = {};
+  if (filters.role !== undefined) {
+    where.role = filters.role;
+  }
+  if (filters.is_active !== undefined) {
+    where.is_active = filters.is_active;
+  }
+  return prisma.user.findMany({
+    where,
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+};
+
+export const countUsers = async () => {
+  return prisma.user.count();
+};

@@ -31,6 +31,7 @@ export const registerUser = async (userData) => {
   const token = generateToken({
     id: newUser.id.toString(), // stringify bigint
     email: newUser.email,
+    name: newUser.name,
     role: newUser.role,
   });
 
@@ -61,6 +62,7 @@ export const loginUser = async (phone, password) => {
   const token = generateToken({
     id: user.id.toString(), // stringify bigint
     email: user.email,
+    name: user.name,
     role: user.role,
   });
 
@@ -155,5 +157,58 @@ export const getAdminProfile = async (id) => {
   }
 
   const { password, ...result } = user;
+  return result;
+};
+
+/**
+ * Fetch all users for admin panels (excluding passwords).
+ */
+export const getAllUsers = async (filters = {}) => {
+  const users = await authRepository.findAllUsers(filters);
+  return users.map((user) => {
+    const { password, ...result } = user;
+    return result;
+  });
+};
+
+/**
+ * Update any user's basic profile or status (SUPER_ADMIN only).
+ */
+export const adminUpdateUser = async (id, updateData) => {
+  const targetUser = await authRepository.findUserById(id);
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  // Prevent self-deactivation of SUPER_ADMIN
+  if (updateData.is_active === false && targetUser.role === "SUPER_ADMIN") {
+    throw new Error("A Super Admin cannot deactivate their own account");
+  }
+
+  // Verify email uniqueness if being updated
+  if (updateData.email && updateData.email !== targetUser.email) {
+    const existingEmail = await authRepository.findUserByEmail(updateData.email);
+    if (existingEmail) {
+      throw new Error("Email already in use");
+    }
+  }
+
+  // Verify phone uniqueness if being updated
+  if (updateData.phone && updateData.phone !== targetUser.phone) {
+    const existingPhone = await authRepository.findUserByPhone(updateData.phone);
+    if (existingPhone) {
+      throw new Error("Phone number already in use");
+    }
+  }
+
+  const updatedUser = await authRepository.updateUser(id, {
+    name: updateData.name,
+    email: updateData.email,
+    phone: updateData.phone,
+    role: updateData.role,
+    is_active: updateData.is_active,
+  });
+
+  const { password, ...result } = updatedUser;
   return result;
 };
