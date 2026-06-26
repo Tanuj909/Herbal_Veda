@@ -97,6 +97,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (name, email, phone, password) => {
+    setLoading(true);
+    try {
+      const response = await axios.post("/api/auth/register", {
+        name,
+        email,
+        phone,
+        password,
+      });
+      if (response.data && response.data.success) {
+        const { token: receivedToken, role } = response.data.data;
+        const decoded = decodeToken(receivedToken);
+
+        // Auto login: Set cookie (Expires in 7 days)
+        setCookie("token", receivedToken, 7);
+
+        setToken(receivedToken);
+        setUser(decoded);
+        return { success: true, role };
+      } else {
+        throw new Error(response.data.message || "Registration failed");
+      }
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message || error.message || "Failed to register";
+      return { success: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     eraseCookie("token");
     setToken(null);
@@ -104,7 +135,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

@@ -59,12 +59,19 @@ export default function Navbar() {
             Shop
           </Link>
           <Link
-            href="#"
+            href="/categories"
             className="text-sm font-semibold text-black hover:text-primary transition-colors"
           >
             Categories
           </Link>
-
+          {user && (
+            <Link
+              href="/orders"
+              className="text-sm font-semibold text-black hover:text-primary transition-colors"
+            >
+              My Orders
+            </Link>
+          )}
         </div>
 
         {/* Right: Actions */}
@@ -75,30 +82,34 @@ export default function Navbar() {
           </button>
 
           {/* Wishlist */}
-          <Link
-            href="#"
-            className="text-on-surface-variant hover:text-primary p-2 transition-colors relative flex items-center"
-            aria-label="Wishlist"
-          >
-            <span className="material-symbols-outlined text-2xl">favorite</span>
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-              0
-            </span>
-          </Link>
+          {user && (
+            <Link
+              href="/wishlist"
+              className="text-on-surface-variant hover:text-primary p-2 transition-colors relative flex items-center"
+              aria-label="Wishlist"
+            >
+              <span className="material-symbols-outlined text-2xl">favorite</span>
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                0
+              </span>
+            </Link>
+          )}
 
           {/* Cart */}
-          <Link
-            href="#"
-            className="text-on-surface-variant hover:text-primary p-2 transition-colors relative flex items-center"
-            aria-label="Shopping Cart"
-          >
-            <span className="material-symbols-outlined text-2xl">
-              shopping_bag
-            </span>
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-              0
-            </span>
-          </Link>
+          {user && (
+            <Link
+              href="/cart"
+              className="text-on-surface-variant hover:text-primary p-2 transition-colors relative flex items-center"
+              aria-label="Shopping Cart"
+            >
+              <span className="material-symbols-outlined text-2xl">
+                shopping_bag
+              </span>
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                0
+              </span>
+            </Link>
+          )}
 
           {/* User Profile / Login */}
           <div className="relative">
@@ -195,12 +206,41 @@ export default function Navbar() {
             Shop
           </Link>
           <Link
-            href="#"
+            href="/categories"
             className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Categories
           </Link>
+
+          {user && (
+            <>
+              <Link
+                href="/wishlist"
+                className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10 flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="material-symbols-outlined text-lg">favorite</span>
+                Wishlist
+              </Link>
+              <Link
+                href="/cart"
+                className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10 flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="material-symbols-outlined text-lg">shopping_bag</span>
+                Cart
+              </Link>
+              <Link
+                href="/orders"
+                className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10 flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="material-symbols-outlined text-lg">receipt_long</span>
+                My Orders
+              </Link>
+            </>
+          )}
 
           <div className="flex gap-4 mt-2">
             <button className="flex-1 py-3 px-4 bg-surface-container-low rounded-xl text-center text-sm font-semibold flex items-center justify-center gap-2">

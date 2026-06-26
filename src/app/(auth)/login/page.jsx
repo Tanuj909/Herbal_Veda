@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
@@ -196,12 +197,12 @@ export default function LoginPage() {
         {/* Footer Sign Up */}
         <p className="text-center text-on-surface-variant text-xs">
           Don't have an account?{" "}
-          <a
+          <Link
             className="text-primary font-bold underline underline-offset-4 hover:text-primary-container transition-colors"
-            href="#"
+            href="/register"
           >
-            Join the family
-          </a>
+            Register
+          </Link>
         </p>
       </div>
     </main>

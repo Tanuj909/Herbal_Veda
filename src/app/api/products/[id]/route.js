@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { successResponse, errorResponse } from "@/lib/response";
 import { validateUpdateProduct } from "@/features/product/product.validation";
 import * as productService from "@/features/product/product.service";
@@ -23,6 +24,7 @@ export async function GET(req, { params }) {
 /**
  * PUT /api/products/[id]
  * Protected endpoint (ADMIN/SUPER_ADMIN only) to update a product.
+ * Returns simple success message: {"message": "Product Updated"}
  */
 export const PUT = withAuth(["ADMIN", "SUPER_ADMIN"])(async (req, { params }) => {
   try {
@@ -35,8 +37,25 @@ export const PUT = withAuth(["ADMIN", "SUPER_ADMIN"])(async (req, { params }) =>
       return errorResponse("Validation failed", 400, errors);
     }
 
-    const updatedProduct = await productService.updateProduct(id, body);
-    return successResponse(updatedProduct, "Product updated successfully");
+    await productService.updateProduct(id, body);
+    return NextResponse.json({ message: "Product Updated" });
+  } catch (error) {
+    return errorResponse(error.message, 400);
+  }
+});
+
+/**
+ * PATCH /api/products/[id]
+ * Protected endpoint (ADMIN/SUPER_ADMIN only) to toggle the product is_active status.
+ * Returns simple success message: {"message": "Product Updated"}
+ */
+export const PATCH = withAuth(["ADMIN", "SUPER_ADMIN"])(async (req, { params }) => {
+  try {
+    const { id } = await params;
+    const currentProduct = await productService.getProductById(id);
+    const newActiveState = !currentProduct.is_active;
+    await productService.updateProduct(id, { is_active: newActiveState });
+    return NextResponse.json({ message: "Product Updated" });
   } catch (error) {
     return errorResponse(error.message, 400);
   }

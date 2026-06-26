@@ -13,6 +13,7 @@ export default function AdminProductsPage() {
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Modal / Form States
   const [modalOpen, setModalOpen] = useState(false);
@@ -164,9 +165,9 @@ export default function AdminProductsPage() {
       const config = {
         headers: { Authorization: `Bearer ${token}` },
       };
-      await axios.put(
+      await axios.patch(
         `/api/products/${product.id}`,
-        { is_active: !product.is_active },
+        {},
         config
       );
       loadData();
@@ -294,7 +295,12 @@ export default function AdminProductsPage() {
       prod.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       !categoryFilter || prod.category_id?.toString() === categoryFilter.toString();
-    return matchesSearch && matchesCategory;
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && prod.is_active) ||
+      (statusFilter === "inactive" && !prod.is_active);
+
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -335,8 +341,8 @@ export default function AdminProductsPage() {
 
       {/* Filters Area */}
       <div className="bg-white border border-outline-variant/30 p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between shadow-xs">
-        <div className="relative w-full sm:max-w-xs">
-          <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-on-surface-variant text-lg">
+        <div className="relative w-full sm:max-w-xs flex items-center">
+          <span className="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-lg pointer-events-none">
             search
           </span>
           <input
@@ -349,6 +355,7 @@ export default function AdminProductsPage() {
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
+          {/* Category Filter */}
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -360,6 +367,17 @@ export default function AdminProductsPage() {
                 {cat.name}
               </option>
             ))}
+          </select>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full sm:w-44 px-3 py-2 border border-outline-variant/40 rounded-xl text-xs bg-white focus:outline-none focus:border-primary/50 cursor-pointer"
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
           </select>
         </div>
       </div>
@@ -455,7 +473,7 @@ export default function AdminProductsPage() {
                         }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${prod.is_active ? "bg-emerald-500" : "bg-[#8e918f]"}`} />
-                        {prod.is_active ? "Active" : "Draft"}
+                        {prod.is_active ? "Active" : "Inactive"}
                       </button>
                     </td>
 
@@ -624,22 +642,27 @@ export default function AdminProductsPage() {
               {/* Active Toggle Switch */}
               <div className="flex items-center justify-between p-3 rounded-xl border border-outline-variant/30 bg-[#FAF6F0]/10 mt-1">
                 <div>
-                  <h4 className="text-xs font-bold text-on-surface">Publish Status</h4>
-                  <p className="text-[10px] text-on-surface-variant font-light">Make this product live in catalog immediately.</p>
+                  <h4 className="text-xs font-bold text-on-surface">Product Status</h4>
+                  <p className="text-[10px] text-on-surface-variant font-light">Set product to Active or Inactive.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsActive(!isActive)}
-                  className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ${
-                    isActive ? "bg-primary" : "bg-[#c4c4c4]"
-                  }`}
-                >
-                  <div
-                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
-                      isActive ? "translate-x-4" : "translate-x-0"
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-on-surface-variant">
+                    {isActive ? "Active" : "Inactive"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsActive(!isActive)}
+                    className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ${
+                      isActive ? "bg-primary" : "bg-[#c4c4c4]"
                     }`}
-                  />
-                </button>
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                        isActive ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Footer Buttons */}
