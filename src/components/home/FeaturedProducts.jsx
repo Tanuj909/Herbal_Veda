@@ -3,52 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { useCart } from "@/context/CartContext";
 
 // Curated high-end fallback products
-const MOCK_PRODUCTS = [
-  {
-    id: "prod-1",
-    name: "Restorative Sage Oil",
-    categoryName: "Essential Oils",
-    price: 28.00,
-    rating: 4.9,
-    reviewsCount: 84,
-    thumbnailUrl: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600",
-    description: "Pure botanical aromatherapy extract to restore calm and focus.",
-  },
-  {
-    id: "prod-2",
-    name: "Golden Chamomile Tea",
-    categoryName: "Herbal Teas",
-    price: 18.00,
-    rating: 4.8,
-    reviewsCount: 124,
-    thumbnailUrl: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=600",
-    description: "Handpicked whole flower organic chamomile infusion for tranquility.",
-  },
-  {
-    id: "prod-3",
-    name: "Hydrating Botanical Serum",
-    categoryName: "Organic Skincare",
-    price: 42.00,
-    rating: 5.0,
-    reviewsCount: 62,
-    thumbnailUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=600",
-    description: "Restorative cold-pressed seed oils offering lightweight deep hydration.",
-  },
-  {
-    id: "prod-4",
-    name: "Clay Cleansing Mask",
-    categoryName: "Organic Skincare",
-    price: 34.00,
-    rating: 4.7,
-    reviewsCount: 45,
-    thumbnailUrl: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=600",
-    description: "Mineral-rich green clay infused with grounding lavender buds.",
-  },
-];
-
 export default function FeaturedProducts() {
+  const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState(null);
@@ -60,26 +19,25 @@ export default function FeaturedProducts() {
         const response = await axios.get("/api/products");
         if (response.data && response.data.success && response.data.data.length > 0) {
           // Format API values correctly
-          const formatted = response.data.data.slice(0, 4).map((apiProd, index) => {
-            const mock = MOCK_PRODUCTS[index % MOCK_PRODUCTS.length];
+          const formatted = response.data.data.slice(0, 4).map((apiProd) => {
             return {
               id: apiProd.id,
               name: apiProd.name,
-              categoryName: apiProd.category?.name || mock.categoryName,
-              price: parseFloat(apiProd.price) || mock.price,
-              rating: mock.rating,
-              reviewsCount: mock.reviewsCount,
-              thumbnailUrl: apiProd.thumbnail_url || mock.thumbnailUrl,
-              description: apiProd.short_description || mock.description,
+              categoryName: apiProd.category?.name || "Botanical",
+              price: parseFloat(apiProd.price) || 0.00,
+              rating: 5.0,
+              reviewsCount: 18,
+              thumbnailUrl: apiProd.thumbnail_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600",
+              description: apiProd.short_description || apiProd.description || "",
             };
           });
           setProducts(formatted);
         } else {
-          setProducts(MOCK_PRODUCTS);
+          setProducts([]);
         }
       } catch (error) {
         console.error("Failed to load products from API:", error);
-        setProducts(MOCK_PRODUCTS);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -89,7 +47,12 @@ export default function FeaturedProducts() {
   }, []);
 
   const handleAddToCart = (productId) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
     setAddingId(productId);
+    addToCart(product, 1);
+    
     setTimeout(() => {
       setAddingId(null);
       setAddedIds((prev) => ({ ...prev, [productId]: true }));
@@ -97,7 +60,7 @@ export default function FeaturedProducts() {
       setTimeout(() => {
         setAddedIds((prev) => ({ ...prev, [productId]: false }));
       }, 2000);
-    }, 800);
+    }, 600);
   };
 
   return (

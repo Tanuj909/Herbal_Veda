@@ -106,6 +106,94 @@ export const updateOrder = async (id, updateData) => {
 };
 
 /**
+ * Create a new order with items and initial status history in a transaction.
+ * Also decrements product stock.
+ * @param {Object} orderData
+ * @returns {Promise<Object>}
+ */
+export const createOrder = async (orderData) => {
+  const { user_id, address_id, order_number, subtotal, shipping_charge, gst, total_amount, items } = orderData;
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Update product quantities and verify stock
+    for (const item of items) {
+      const product = await tx.product.findUnique({
+        where: { id: BigInt(item.product_id) }
+      });
+      
+      if (!product) {
+        throw new Error(`Product with ID ${item.product_id} not found`);
+      }
+      
+      if (product.quantity < item.quantity) {
+        throw new Error(`Insufficient stock for product: ${product.name}`);
+      }
+
+      await tx.product.update({
+        where: { id: BigInt(item.product_id) },
+        data: {
+          quantity: {
+            decrement: item.quantity
+          }
+        }
+      });
+    }
+
+    // 2. Create the order with nested items and status history
+    return tx.order.create({
+      data: {
+        order_number,
+        user_id: BigInt(user_id),
+        address_id: BigInt(address_id),
+        subtotal: parseFloat(subtotal),
+        shipping_charge: parseFloat(shipping_charge),
+        gst: parseFloat(gst || 0),
+        total_amount: parseFloat(total_amount),
+        status: "PENDING",
+        items: {
+          create: items.map((item) => ({
+            product_id: BigInt(item.product_id),
+            product_name: item.product_name,
+            product_price: parseFloat(item.product_price),
+            quantity: item.quantity,
+            total_price: parseFloat(item.total_price)
+          }))
+        },
+        status_history: {
+          create: {
+            status: "PENDING",
+            remarks: "Order created successfully",
+            created_by: BigInt(user_id)
+          }
+        }
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                sku: true,
+                thumbnail_url: true,
+              }
+            }
+          }
+        },
+        address: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          }
+        }
+      }
+    });
+  });
+};
+
+/**
  * Add an order status change history log.
  * @param {Object} historyData
  * @returns {Promise<Object>}
@@ -120,10 +208,9 @@ export const createStatusHistory = async (historyData) => {
   };
 
   if (changed_by) {
-    data.changed_by = BigInt(changed_by);
+    data.created_by = BigInt(changed_by);
   }
 
-  // Note: the schema maps relation "order" to User (changed_by)
   return prisma.orderStatusHistory.create({
     data,
   });

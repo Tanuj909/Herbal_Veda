@@ -422,6 +422,10 @@ export default function AdminOrdersPage() {
                   </span>
                 </div>
                 <div className="h-px bg-outline-variant/20 my-1" />
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant font-light">GST:</span>
+                  <span className="font-semibold text-on-surface">${parseFloat(selectedOrder.gst || 0).toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-bold text-on-surface">Grand Total:</span>
                   <span className="font-bold text-primary">${parseFloat(selectedOrder.total_amount || 0).toFixed(2)}</span>

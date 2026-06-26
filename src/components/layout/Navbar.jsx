@@ -4,10 +4,12 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 export default function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { cartCount } = useCart();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -72,6 +74,14 @@ export default function Navbar() {
               My Orders
             </Link>
           )}
+          {user && (
+            <Link
+              href="/addresses"
+              className="text-sm font-semibold text-black hover:text-primary transition-colors"
+            >
+              Addresses
+            </Link>
+          )}
         </div>
 
         {/* Right: Actions */}
@@ -105,9 +115,11 @@ export default function Navbar() {
               <span className="material-symbols-outlined text-2xl">
                 shopping_bag
               </span>
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-                0
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white animate-pulse">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           )}
 
@@ -225,11 +237,18 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/cart"
-                className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10 flex items-center gap-2"
+                className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10 flex items-center justify-between"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                Cart
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg">shopping_bag</span>
+                  Cart
+                </div>
+                {cartCount > 0 && (
+                  <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
               <Link
                 href="/orders"
@@ -238,6 +257,14 @@ export default function Navbar() {
               >
                 <span className="material-symbols-outlined text-lg">receipt_long</span>
                 My Orders
+              </Link>
+              <Link
+                href="/addresses"
+                className="text-base font-bold text-black hover:text-primary py-2 border-b border-outline-variant/10 flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="material-symbols-outlined text-lg">location_on</span>
+                Addresses
               </Link>
             </>
           )}

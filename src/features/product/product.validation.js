@@ -10,6 +10,7 @@ export const validateCreateProduct = (data) => {
     name,
     slug,
     price,
+    gst,
     quantity,
     sku,
     thumbnail_url,
@@ -51,6 +52,14 @@ export const validateCreateProduct = (data) => {
     const priceNum = Number(price);
     if (isNaN(priceNum) || priceNum < 0) {
       errors.price = "Price must be a valid non-negative number";
+    }
+  }
+
+  // Validate GST percentage
+  if (gst !== undefined && gst !== null && gst !== "") {
+    const gstNum = Number(gst);
+    if (isNaN(gstNum) || gstNum < 0 || gstNum > 100) {
+      errors.gst = "GST must be a valid percentage between 0 and 100";
     }
   }
 
@@ -103,6 +112,7 @@ export const validateUpdateProduct = (data) => {
     name,
     slug,
     price,
+    gst,
     quantity,
     sku,
     thumbnail_url,
@@ -142,6 +152,14 @@ export const validateUpdateProduct = (data) => {
     const priceNum = Number(price);
     if (isNaN(priceNum) || priceNum < 0) {
       errors.price = "Price must be a valid non-negative number";
+    }
+  }
+
+  // Validate GST percentage if provided
+  if (gst !== undefined && gst !== null && gst !== "") {
+    const gstNum = Number(gst);
+    if (isNaN(gstNum) || gstNum < 0 || gstNum > 100) {
+      errors.gst = "GST must be a valid percentage between 0 and 100";
     }
   }
 

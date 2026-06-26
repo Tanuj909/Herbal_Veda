@@ -28,14 +28,6 @@ export default function AdminCategoriesPage() {
   // Alert State
   const [alert, setAlert] = useState(null);
 
-  // Prefill mock fallback templates if database starts empty
-  const MOCK_CATEGORIES = [
-    { id: "mock-1", name: "Essential Oils", slug: "essential-oils", parent_id: null, is_active: true },
-    { id: "mock-2", name: "Herbal Teas", slug: "herbal-teas", parent_id: null, is_active: true },
-    { id: "mock-3", name: "Organic Skincare", slug: "organic-skincare", parent_id: null, is_active: true },
-    { id: "mock-4", name: "Wellness Elixirs", slug: "wellness-elixirs", parent_id: null, is_active: true },
-  ];
-
   const triggerAlert = (type, message) => {
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 4000);
@@ -55,16 +47,10 @@ export default function AdminCategoriesPage() {
         flatData = res.data.data;
       }
 
-      // Fallback to mock if empty
-      if (flatData.length === 0) {
-        setCategories(MOCK_CATEGORIES);
-      } else {
-        setCategories(flatData);
-      }
+      setCategories(flatData);
     } catch (error) {
       console.error("Failed to load categories page data:", error);
       triggerAlert("error", "Failed to retrieve category list");
-      setCategories(MOCK_CATEGORIES);
     } finally {
       setLoading(false);
     }
@@ -95,14 +81,6 @@ export default function AdminCategoriesPage() {
 
   // Toggle active status inline
   const handleToggleActive = async (category) => {
-    if (category.id.toString().startsWith("mock-")) {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === category.id ? { ...c, is_active: !c.is_active } : c))
-      );
-      triggerAlert("success", "Mock category status toggled successfully");
-      return;
-    }
-
     try {
       const config = {
         headers: { Authorization: `Bearer ${token}` },
@@ -122,12 +100,6 @@ export default function AdminCategoriesPage() {
   // Handle delete
   const handleDeleteCategory = async (categoryId) => {
     if (!window.confirm("Are you sure you want to delete this category? Products inside it may be affected.")) {
-      return;
-    }
-
-    if (categoryId.toString().startsWith("mock-")) {
-      setCategories((prev) => prev.filter((c) => c.id !== categoryId));
-      triggerAlert("success", "Mock category deleted");
       return;
     }
 
@@ -168,30 +140,6 @@ export default function AdminCategoriesPage() {
       parent_id: null,
       is_active: isActive,
     };
-
-    // If mock sandbox mode, update state locally
-    if (editingId && editingId.startsWith("mock-")) {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === editingId ? { ...c, ...payload } : c))
-      );
-      setModalOpen(false);
-      setSubmitting(false);
-      triggerAlert("success", "Mock category updated successfully");
-      return;
-    } else if (!editingId && categories[0]?.id?.toString().startsWith("mock-")) {
-      const newMockCat = {
-        id: `mock-${Date.now()}`,
-        name,
-        slug: slug || name.toLowerCase().replace(/\s+/g, "-"),
-        parent_id: null,
-        is_active: isActive,
-      };
-      setCategories((prev) => [...prev, newMockCat]);
-      setModalOpen(false);
-      setSubmitting(false);
-      triggerAlert("success", "Mock category created successfully");
-      return;
-    }
 
     try {
       const config = {
@@ -400,7 +348,7 @@ export default function AdminCategoriesPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Essential Oils"
+                  placeholder="Category Name"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
                 />
                 {formErrors.name && <span className="text-[10px] text-rose-600 font-semibold">{formErrors.name}</span>}
@@ -420,7 +368,7 @@ export default function AdminCategoriesPage() {
                       .replace(/\-\-+/g, "-");
                     setSlug(cleaned);
                   }}
-                  placeholder="e.g. organic-skincare"
+                  placeholder="Custom Slug"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 font-mono"
                 />
               </div>

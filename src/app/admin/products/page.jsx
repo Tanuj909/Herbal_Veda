@@ -26,6 +26,7 @@ export default function AdminProductsPage() {
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [price, setPrice] = useState("");
+  const [gst, setGst] = useState("");
   const [quantity, setQuantity] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [shortDescription, setShortDescription] = useState("");
@@ -35,43 +36,6 @@ export default function AdminProductsPage() {
 
   // Alert State
   const [alert, setAlert] = useState(null);
-
-  // Prefill mock fallback templates if database starts empty
-  const MOCK_CATEGORIES = [
-    { id: "mock-c1", name: "Essential Oils" },
-    { id: "mock-c2", name: "Herbal Teas" },
-    { id: "mock-c3", name: "Organic Skincare" },
-    { id: "mock-c4", name: "Wellness Elixirs" },
-  ];
-
-  const MOCK_PRODUCTS = [
-    {
-      id: "mock-p1",
-      name: "Restorative Sage Oil",
-      sku: "OILS-SAGE-01",
-      price: 28.0,
-      quantity: 3,
-      category_id: "mock-c1",
-      category: { name: "Essential Oils" },
-      short_description: "Pure botanical aromatherapy extract to restore calm and focus.",
-      description: "Organic steam-distilled extract formulation.",
-      thumbnail_url: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=200",
-      is_active: true,
-    },
-    {
-      id: "mock-p2",
-      name: "Golden Chamomile Tea",
-      sku: "TEAS-CHAM-02",
-      price: 18.0,
-      quantity: 12,
-      category_id: "mock-c2",
-      category: { name: "Herbal Teas" },
-      short_description: "Handpicked whole flower organic chamomile infusion for tranquility.",
-      description: "Relaxing bedtime blend.",
-      thumbnail_url: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=200",
-      is_active: true,
-    },
-  ];
 
   const triggerAlert = (type, message) => {
     setAlert({ type, message });
@@ -99,14 +63,8 @@ export default function AdminProductsPage() {
         categoriesData = categoriesRes.value.data.data;
       }
 
-      // If database is completely empty, use mock sandbox list
-      if (productsData.length === 0 && categoriesData.length === 0) {
-        setProducts(MOCK_PRODUCTS);
-        setCategories(MOCK_CATEGORIES);
-      } else {
-        setProducts(productsData);
-        setCategories(categoriesData);
-      }
+      setProducts(productsData);
+      setCategories(categoriesData);
     } catch (error) {
       console.error("Failed to load products page data:", error);
       triggerAlert("error", "Failed to retrieve catalog data");
@@ -128,6 +86,7 @@ export default function AdminProductsPage() {
       setName(product.name);
       setSku(product.sku);
       setPrice(product.price.toString());
+      setGst(product.gst?.toString() || "0");
       setQuantity(product.quantity.toString());
       setCategoryId(product.category_id ? product.category_id.toString() : "");
       setShortDescription(product.short_description || "");
@@ -140,6 +99,7 @@ export default function AdminProductsPage() {
       // Generate standard random SKU for fun helper
       setSku(`Veda-${Math.floor(1000 + Math.random() * 9000)}`);
       setPrice("");
+      setGst("0");
       setQuantity("");
       setCategoryId(categories[0]?.id?.toString() || "");
       setShortDescription("");
@@ -152,15 +112,6 @@ export default function AdminProductsPage() {
 
   // Handle active toggle inline
   const handleToggleActive = async (product) => {
-    // If mock item, update state locally
-    if (product.id.toString().startsWith("mock-")) {
-      setProducts((prev) =>
-        prev.map((p) => (p.id === product.id ? { ...p, is_active: !p.is_active } : p))
-      );
-      triggerAlert("success", "Mock product status toggled successfully");
-      return;
-    }
-
     try {
       const config = {
         headers: { Authorization: `Bearer ${token}` },
@@ -180,13 +131,6 @@ export default function AdminProductsPage() {
   // Handle delete
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm("Are you sure you want to permanently delete this product?")) {
-      return;
-    }
-
-    // Mock delete
-    if (productId.toString().startsWith("mock-")) {
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-      triggerAlert("success", "Mock product deleted");
       return;
     }
 
@@ -212,6 +156,7 @@ export default function AdminProductsPage() {
     if (!name.trim()) errors.name = "Product name is required";
     if (!sku.trim()) errors.sku = "SKU code is required";
     if (!price || isNaN(Number(price)) || Number(price) < 0) errors.price = "Valid price is required";
+    if (gst === "" || isNaN(Number(gst)) || Number(gst) < 0 || Number(gst) > 100) errors.gst = "GST must be between 0 and 100";
     if (!quantity || isNaN(Number(quantity)) || Number(quantity) < 0) errors.quantity = "Valid stock is required";
     if (!categoryId) errors.category_id = "Category selection is required";
 
@@ -226,6 +171,7 @@ export default function AdminProductsPage() {
       name,
       sku,
       price: parseFloat(price),
+      gst: parseFloat(gst),
       quantity: parseInt(quantity, 10),
       category_id: categoryId,
       short_description: shortDescription,
@@ -233,38 +179,6 @@ export default function AdminProductsPage() {
       thumbnail_url: thumbnailUrl,
       is_active: isActive,
     };
-
-    // If mock dashboard mode, update state locally
-    if (editingId && editingId.startsWith("mock-")) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? {
-                ...p,
-                ...payload,
-                category: categories.find((c) => c.id.toString() === categoryId) || { name: "Apothecary" },
-              }
-            : p
-        )
-      );
-      setModalOpen(false);
-      setSubmitting(false);
-      triggerAlert("success", "Mock product updated successfully");
-      return;
-    } else if (!editingId && products[0]?.id?.toString().startsWith("mock-")) {
-      setProducts((prev) => [
-        {
-          id: `mock-p${Date.now()}`,
-          ...payload,
-          category: categories.find((c) => c.id.toString() === categoryId) || { name: "Apothecary" },
-        },
-        ...prev,
-      ]);
-      setModalOpen(false);
-      setSubmitting(false);
-      triggerAlert("success", "Mock product added successfully");
-      return;
-    }
 
     try {
       const config = {
@@ -407,6 +321,7 @@ export default function AdminProductsPage() {
                   <th className="p-4 font-semibold">SKU</th>
                   <th className="p-4 font-semibold">Category</th>
                   <th className="p-4 font-semibold">Price</th>
+                  <th className="p-4 font-semibold">GST</th>
                   <th className="p-4 font-semibold">Stock</th>
                   <th className="p-4 font-semibold text-center">Status</th>
                   <th className="p-4 font-semibold text-center">Actions</th>
@@ -447,6 +362,11 @@ export default function AdminProductsPage() {
                     {/* Price */}
                     <td className="p-4 font-bold text-on-surface">
                       ${parseFloat(prod.price).toFixed(2)}
+                    </td>
+
+                    {/* GST */}
+                    <td className="p-4 font-semibold text-on-surface-variant">
+                      {parseFloat(prod.gst || 0).toFixed(2)}%
                     </td>
 
                     {/* Quantity */}
@@ -531,7 +451,7 @@ export default function AdminProductsPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Lavender Hydrosol Water"
+                  placeholder="Product Name"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
                 />
                 {formErrors.name && <span className="text-[10px] text-rose-600 font-semibold">{formErrors.name}</span>}
@@ -542,12 +462,12 @@ export default function AdminProductsPage() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-on-surface">SKU Code *</label>
                   <input
-                    type="text"
-                    required
-                    value={sku}
-                    onChange={(e) => setSku(e.target.value)}
-                    placeholder="e.g. VEDA-LAV-01"
-                    className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 font-mono font-semibold"
+                     type="text"
+                     required
+                     value={sku}
+                     onChange={(e) => setSku(e.target.value)}
+                     placeholder="SKU Code"
+                     className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 font-mono font-semibold"
                   />
                   {formErrors.sku && <span className="text-[10px] text-rose-600 font-semibold">{formErrors.sku}</span>}
                 </div>
@@ -571,8 +491,8 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Price & Quantity Stock (Flex) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Price, GST & Quantity Stock */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-on-surface">Selling Price ($) *</label>
                   <input
@@ -582,10 +502,26 @@ export default function AdminProductsPage() {
                     required
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="24.00"
+                    placeholder="Selling Price"
                     className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
                   />
                   {formErrors.price && <span className="text-[10px] text-rose-600 font-semibold">{formErrors.price}</span>}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-on-surface">GST (%) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    required
+                    value={gst}
+                    onChange={(e) => setGst(e.target.value)}
+                    placeholder="GST"
+                    className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
+                  />
+                  {formErrors.gst && <span className="text-[10px] text-rose-600 font-semibold">{formErrors.gst}</span>}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -596,7 +532,7 @@ export default function AdminProductsPage() {
                     required
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="15"
+                    placeholder="Stock Quantity"
                     className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
                   />
                   {formErrors.quantity && <span className="text-[10px] text-rose-600 font-semibold">{formErrors.quantity}</span>}
@@ -610,7 +546,7 @@ export default function AdminProductsPage() {
                   type="url"
                   value={thumbnailUrl}
                   onChange={(e) => setThumbnailUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="Thumbnail Image URL"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
                 />
               </div>
@@ -622,7 +558,7 @@ export default function AdminProductsPage() {
                   type="text"
                   value={shortDescription}
                   onChange={(e) => setShortDescription(e.target.value)}
-                  placeholder="Max 1-2 sentences summarizing properties"
+                  placeholder="Short Summary Description"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
                 />
               </div>
@@ -634,7 +570,7 @@ export default function AdminProductsPage() {
                   rows="3"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Elaborate details about use cases, benefits, ingredients..."
+                  placeholder="Full Product Description"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 resize-y"
                 />
               </div>

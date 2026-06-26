@@ -95,6 +95,7 @@ export const createProduct = async (productData) => {
     short_description,
     description,
     price,
+    gst,
     quantity,
     sku,
     thumbnail_url,
@@ -110,6 +111,7 @@ export const createProduct = async (productData) => {
       short_description,
       description,
       price,
+      gst: gst !== undefined ? gst : 0,
       quantity: parseInt(quantity, 10),
       sku,
       thumbnail_url,
@@ -142,6 +144,7 @@ export const updateProduct = async (id, updateData) => {
     short_description,
     description,
     price,
+    gst,
     quantity,
     sku,
     thumbnail_url,
@@ -157,6 +160,7 @@ export const updateProduct = async (id, updateData) => {
   if (short_description !== undefined) data.short_description = short_description;
   if (description !== undefined) data.description = description;
   if (price !== undefined) data.price = price;
+  if (gst !== undefined) data.gst = gst;
   if (quantity !== undefined) data.quantity = parseInt(quantity, 10);
   if (sku !== undefined) data.sku = sku;
   if (thumbnail_url !== undefined) data.thumbnail_url = thumbnail_url;

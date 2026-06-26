@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `products` ADD COLUMN `gst` DECIMAL(5, 2) NOT NULL DEFAULT 0.00;
+
+-- AlterTable
+ALTER TABLE `orders` ADD COLUMN `gst` DECIMAL(10, 2) NOT NULL DEFAULT 0.00;

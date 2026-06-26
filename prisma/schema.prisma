@@ -94,6 +94,7 @@ model Product {
   short_description String?  @db.Text
   description       String?  @db.LongText
   price             Decimal  @db.Decimal(10, 2)
+  gst               Decimal  @default(0.00) @db.Decimal(5, 2)
   quantity          Int
   sku               String   @unique @db.VarChar(100)
   thumbnail_url     String?  @db.VarChar(500)
@@ -169,6 +170,7 @@ model Order {
   address_id      BigInt
   subtotal        Decimal     @db.Decimal(10, 2)
   shipping_charge Decimal     @db.Decimal(10, 2)
+  gst             Decimal     @default(0.00) @db.Decimal(10, 2)
   total_amount    Decimal     @db.Decimal(10, 2)
   status          OrderStatus @default(PENDING)
   created_at      DateTime    @default(now())
