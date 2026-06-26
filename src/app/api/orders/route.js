@@ -44,7 +44,7 @@ export const POST = withAuth()(async (req) => {
   try {
     const user = req.user;
     const body = await req.json();
-    const { address_id, items } = body;
+    const { address_id, items, payment_method = "COD" } = body;
 
     if (!address_id) {
       return errorResponse("Shipping address (address_id) is required", 400);
@@ -53,11 +53,11 @@ export const POST = withAuth()(async (req) => {
       return errorResponse("Order items are required and must be an array", 400);
     }
 
-    const order = await orderService.createOrder(
-      user.id,
-      address_id,
-      items
-    );
+    if (String(payment_method).toUpperCase() === "ONLINE") {
+      return errorResponse("Use /api/payments/create-order for online payments", 400);
+    }
+
+    const order = await orderService.createOrder(user.id, address_id, items, "COD");
 
     return successResponse(order, "Order placed successfully", 201);
   } catch (error) {

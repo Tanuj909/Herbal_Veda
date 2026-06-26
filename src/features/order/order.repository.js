@@ -41,6 +41,11 @@ export const findAllOrders = async (filters = {}) => {
           },
         },
       },
+      payments: {
+        orderBy: {
+          created_at: "desc",
+        },
+      },
     },
     orderBy: {
       created_at: "desc",
@@ -82,6 +87,11 @@ export const findOrderById = async (id) => {
           created_at: "desc",
         },
       },
+      payments: {
+        orderBy: {
+          created_at: "desc",
+        },
+      },
     },
   });
 };
@@ -92,14 +102,15 @@ export const findOrderById = async (id) => {
  * @param {Object} updateData
  * @returns {Promise<Object>}
  */
-export const updateOrder = async (id, updateData) => {
-  const { status, payment_status } = updateData;
+export const updateOrder = async (id, updateData, db = prisma) => {
+  const { status, payment_status, payment_method } = updateData;
   const data = {};
 
   if (status !== undefined) data.status = status;
   if (payment_status !== undefined) data.payment_status = payment_status;
+  if (payment_method !== undefined) data.payment_method = payment_method;
 
-  return prisma.order.update({
+  return db.order.update({
     where: { id: BigInt(id) },
     data,
   });
@@ -112,7 +123,19 @@ export const updateOrder = async (id, updateData) => {
  * @returns {Promise<Object>}
  */
 export const createOrder = async (orderData) => {
-  const { user_id, address_id, order_number, subtotal, shipping_charge, gst, total_amount, items } = orderData;
+  const {
+    user_id,
+    address_id,
+    order_number,
+    subtotal,
+    shipping_charge,
+    gst,
+    total_amount,
+    payment_method = "COD",
+    payment_status = "PENDING",
+    razorpay_order_id = null,
+    items,
+  } = orderData;
 
   return prisma.$transaction(async (tx) => {
     // 1. Update product quantities and verify stock
@@ -149,6 +172,8 @@ export const createOrder = async (orderData) => {
         shipping_charge: parseFloat(shipping_charge),
         gst: parseFloat(gst || 0),
         total_amount: parseFloat(total_amount),
+        payment_method,
+        payment_status,
         status: "PENDING",
         items: {
           create: items.map((item) => ({
@@ -158,6 +183,14 @@ export const createOrder = async (orderData) => {
             quantity: item.quantity,
             total_price: parseFloat(item.total_price)
           }))
+        },
+        payments: {
+          create: {
+            amount: parseFloat(total_amount),
+            payment_method,
+            status: payment_status,
+            razorpay_order_id,
+          },
         },
         status_history: {
           create: {
@@ -198,7 +231,7 @@ export const createOrder = async (orderData) => {
  * @param {Object} historyData
  * @returns {Promise<Object>}
  */
-export const createStatusHistory = async (historyData) => {
+export const createStatusHistory = async (historyData, db = prisma) => {
   const { order_id, status, changed_by, remarks } = historyData;
 
   const data = {
@@ -211,7 +244,7 @@ export const createStatusHistory = async (historyData) => {
     data.created_by = BigInt(changed_by);
   }
 
-  return prisma.orderStatusHistory.create({
+  return db.orderStatusHistory.create({
     data,
   });
 };

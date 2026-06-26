@@ -102,8 +102,8 @@ export const getOrderSummary = async (items) => {
     });
   }
 
-  // 1. Calculate shipping: Free shipping on orders >= $50, else $5 flat rate
-  const shipping = subtotal >= 50 ? 0.00 : 5.00;
+  // 1. Calculate shipping: Rs. 50 below Rs. 1000, otherwise free.
+  const shipping = subtotal < 1000 ? 50.00 : 0.00;
 
   // 2. Calculate GST from the GST percentage stored on each product.
   gst = parseFloat(gst.toFixed(2));
@@ -111,8 +111,9 @@ export const getOrderSummary = async (items) => {
   // 3. Calculate discount: 0.00 for now
   const discount = 0.00;
 
-  // 4. Calculate grand total
-  const grandTotal = parseFloat((subtotal + shipping + gst - discount).toFixed(2));
+  // 4. Calculate grand total and round it to a whole rupee so the payable amount
+  // never carries paise/points.
+  const grandTotal = Math.round(subtotal + shipping + gst - discount);
 
   return {
     subtotal,
@@ -120,7 +121,7 @@ export const getOrderSummary = async (items) => {
     gst,
     tax: gst,
     discount,
-    grand_total: grandTotal,
+    grand_total: parseFloat(grandTotal.toFixed(2)),
     items: processedItems,
   };
 };
@@ -128,7 +129,7 @@ export const getOrderSummary = async (items) => {
 /**
  * Create a new order for a user.
  */
-export const createOrder = async (userId, addressId, items) => {
+export const createOrder = async (userId, addressId, items, paymentMethod = "COD") => {
   // 1. Verify address exists and belongs to user
   const prisma = (await import("@/lib/prisma")).default;
   const address = await prisma.address.findUnique({
@@ -155,7 +156,9 @@ export const createOrder = async (userId, addressId, items) => {
     subtotal: summary.subtotal,
     shipping_charge: summary.shipping,
     gst: summary.gst,
-    total_amount: summary.grand_total, // stores Grand Total (subtotal + shipping + GST - discount)
+    total_amount: summary.grand_total, // stores rounded Grand Total (subtotal + shipping + GST - discount)
+    payment_method: paymentMethod,
+    payment_status: paymentMethod === "COD" ? "PENDING" : "SUCCESS",
     items: summary.items
   });
 };
