@@ -89,8 +89,8 @@ export default function RegisterPage() {
               >
                 eco
               </span>
-              <span className="font-headline text-lg font-bold tracking-tight text-on-surface">
-                The Herbal Veda
+              <span className="font-headline text-lg font-bold tracking-tight text-[#138D45]">
+                The Herbal <span className="text-[#6FB74B]">Veda</span>
               </span>
             </div>
             <h1 className="text-2xl font-headline font-bold text-on-surface">

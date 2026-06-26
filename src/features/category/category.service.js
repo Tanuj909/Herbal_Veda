@@ -257,3 +257,44 @@ export const deleteCategory = async (id) => {
 
   return categoryRepository.deleteCategory(id);
 };
+
+/**
+ * Bulk create categories.
+ * @param {Array} categoriesArray
+ * @returns {Promise<Array>}
+ */
+export const bulkCreateCategories = async (categoriesArray) => {
+  if (!Array.isArray(categoriesArray)) {
+    throw new Error("Input must be an array of categories");
+  }
+
+  const slugsInBatch = new Set();
+  const processedCategories = [];
+
+  for (let i = 0; i < categoriesArray.length; i++) {
+    const item = categoriesArray[i];
+    const name = item.name?.trim();
+    if (!name) {
+      throw new Error(`Category item at index ${i} is missing a name`);
+    }
+
+    let slug = item.slug ? item.slug.trim() : "";
+    if (!slug) {
+      slug = generateSlug(name);
+    }
+
+    if (slugsInBatch.has(slug)) {
+      throw new Error(`Duplicate slug "${slug}" detected in the bulk upload batch`);
+    }
+    slugsInBatch.add(slug);
+
+    processedCategories.push({
+      name,
+      slug,
+      parent_id: item.parent_id || null,
+      is_active: item.is_active !== undefined ? item.is_active : true,
+    });
+  }
+
+  return categoryRepository.bulkCreateCategories(processedCategories);
+};

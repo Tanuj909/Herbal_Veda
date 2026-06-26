@@ -137,3 +137,45 @@ export const countProductsByCategoryId = async (categoryId) => {
     },
   });
 };
+
+/**
+ * Bulk create categories in a transaction.
+ * @param {Array} categories
+ * @returns {Promise<Array>}
+ */
+export const bulkCreateCategories = async (categories) => {
+  return prisma.$transaction(async (tx) => {
+    const results = [];
+    for (const cat of categories) {
+      let parent_id_bigint = null;
+      if (cat.parent_id) {
+        const parentId = BigInt(cat.parent_id);
+        const parentCategory = await tx.category.findUnique({
+          where: { id: parentId }
+        });
+        if (!parentCategory) {
+          throw new Error(`Parent category with ID ${cat.parent_id} not found for category "${cat.name}"`);
+        }
+        parent_id_bigint = parentId;
+      }
+
+      const existing = await tx.category.findUnique({
+        where: { slug: cat.slug }
+      });
+      if (existing) {
+        throw new Error(`Category with slug "${cat.slug}" already exists`);
+      }
+
+      const created = await tx.category.create({
+        data: {
+          name: cat.name,
+          slug: cat.slug,
+          parent_id: parent_id_bigint,
+          is_active: cat.is_active,
+        }
+      });
+      results.push(created);
+    }
+    return results;
+  });
+};

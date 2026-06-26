@@ -209,3 +209,68 @@ export const deleteProduct = async (id) => {
 export const countProducts = async () => {
   return prisma.product.count();
 };
+
+/**
+ * Bulk create products in a transaction.
+ * @param {Array} products
+ * @returns {Promise<Array>}
+ */
+export const bulkCreateProducts = async (products) => {
+  return prisma.$transaction(async (tx) => {
+    const results = [];
+    for (const prod of products) {
+      // 1. Verify category existence
+      const category = await tx.category.findUnique({
+        where: { id: BigInt(prod.category_id) }
+      });
+      if (!category) {
+        throw new Error(`Category ID ${prod.category_id} not found for product "${prod.name}"`);
+      }
+
+      // 2. Verify slug uniqueness
+      const existingSlug = await tx.product.findUnique({
+        where: { slug: prod.slug }
+      });
+      if (existingSlug) {
+        throw new Error(`Product with slug "${prod.slug}" already exists`);
+      }
+
+      // 3. Verify SKU uniqueness
+      const existingSku = await tx.product.findUnique({
+        where: { sku: prod.sku }
+      });
+      if (existingSku) {
+        throw new Error(`Product with SKU "${prod.sku}" already exists`);
+      }
+
+      // 4. Create Product
+      const newProduct = await tx.product.create({
+        data: {
+          category_id: BigInt(prod.category_id),
+          name: prod.name,
+          slug: prod.slug,
+          short_description: prod.short_description,
+          description: prod.description,
+          price: prod.price,
+          gst: prod.gst,
+          quantity: prod.quantity,
+          sku: prod.sku,
+          thumbnail_url: prod.thumbnail_url,
+          is_active: prod.is_active,
+          images: {
+            create: prod.images.map((img, idx) => ({
+              image_url: img.image_url || img,
+              display_order: img.display_order !== undefined ? img.display_order : idx,
+            })),
+          },
+        },
+        include: {
+          category: true,
+          images: true,
+        }
+      });
+      results.push(newProduct);
+    }
+    return results;
+  });
+};

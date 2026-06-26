@@ -298,11 +298,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -340,15 +342,14 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16 lg:h-[72px]">
         {/* Left: Brand Logo */}
-        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group flex-shrink-0">
-          <span
-            className="material-symbols-outlined text-2xl sm:text-3xl transition-transform duration-300 group-hover:rotate-12 text-[#2C3E37]"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            eco
-          </span>
-          <span className="font-headline text-base sm:text-lg lg:text-xl font-bold tracking-tight text-[#242926] whitespace-nowrap">
-            The Herbal <span className="text-[#2C3E37]">Veda</span>
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <img
+            src="/logo/logo.jpeg"
+            alt="The Herbal Veda Logo"
+            className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-full border border-[#E8EDEA]"
+          />
+          <span className="font-headline text-base sm:text-lg lg:text-xl font-bold tracking-tight text-[#138D45] whitespace-nowrap">
+            The Herbal <span className="text-[#6FB74B]">Veda</span>
           </span>
         </Link>
 
@@ -359,6 +360,12 @@ export default function Navbar() {
             className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
           >
             Shop
+          </Link>
+          <Link
+            href="/products"
+            className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
+          >
+            Products
           </Link>
           <Link
             href="/categories"
@@ -399,9 +406,11 @@ export default function Navbar() {
               aria-label="Wishlist"
             >
               <span className="material-symbols-outlined text-xl sm:text-2xl">favorite</span>
-              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-[#2C3E37] text-[8px] sm:text-[10px] font-bold text-white">
-                0
-              </span>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-[#2C3E37] text-[8px] sm:text-[10px] font-bold text-white">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
           )}
 
@@ -519,6 +528,14 @@ export default function Navbar() {
             Shop
           </Link>
           <Link
+            href="/products"
+            className="text-base font-medium text-[#242926] hover:text-[#2C3E37] py-2.5 border-b border-[#F0F3F1] flex items-center gap-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <span className="material-symbols-outlined text-lg text-[#6B7A75]">spa</span>
+            Products
+          </Link>
+          <Link
             href="/categories"
             className="text-base font-medium text-[#242926] hover:text-[#2C3E37] py-2.5 border-b border-[#F0F3F1] flex items-center gap-2"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -538,9 +555,11 @@ export default function Navbar() {
                   <span className="material-symbols-outlined text-lg text-[#6B7A75]">favorite</span>
                   Wishlist
                 </div>
-                <span className="bg-[#F0F3F1] text-[#2C3E37] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  0
-                </span>
+                {wishlistCount > 0 && (
+                  <span className="bg-[#2C3E37] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
               <Link
                 href="/cart"

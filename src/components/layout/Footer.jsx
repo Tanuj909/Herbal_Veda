@@ -11,15 +11,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6 items-start justify-between">
           {/* Column 1: Brand Info */}
           <div className="flex flex-col gap-3 max-w-sm">
-            <Link href="/" className="flex items-center gap-2 text-primary-fixed-dim">
-              <span
-                className="material-symbols-outlined text-3xl flex items-center justify-center"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                eco
-              </span>
-              <span className="font-headline text-2xl font-bold tracking-tight text-white">
-                The Herbal Veda
+            <Link href="/" className="flex items-center gap-2.5 text-primary-fixed-dim">
+              <img
+                src="/logo/logo.jpeg"
+                alt="The Herbal Veda Logo"
+                className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full border border-white/10"
+              />
+              <span className="font-headline text-2xl font-bold tracking-tight text-[#138D45]">
+                The Herbal <span className="text-[#6FB74B]">Veda</span>
               </span>
             </Link>
             <p className="text-sm text-[#c8c5bc] leading-relaxed font-light">

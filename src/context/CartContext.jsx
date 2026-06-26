@@ -13,7 +13,16 @@ export const CartProvider = ({ children }) => {
     try {
       const storedCart = localStorage.getItem("veda_cart");
       if (storedCart) {
-        setCart(JSON.parse(storedCart));
+        const parsed = JSON.parse(storedCart);
+        if (Array.isArray(parsed)) {
+          // Sanitize loaded items to ensure numbers for price/quantity
+          const sanitized = parsed.map((item) => ({
+            ...item,
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.price) || 0,
+          }));
+          setCart(sanitized);
+        }
       }
     } catch (error) {
       console.error("Failed to load cart from local storage:", error);
@@ -33,15 +42,21 @@ export const CartProvider = ({ children }) => {
   }, [cart, isInitialized]);
 
   const addToCart = (product, quantity = 1) => {
+    const qtyToAdd = Number(quantity) || 1;
     setCart((prevCart) => {
       const existingItemIndex = prevCart.findIndex(
         (item) => item.product_id === product.id.toString() || item.id === product.id
       );
 
       if (existingItemIndex > -1) {
-        // Increment quantity
+        // Increment quantity safely by copying the object first to avoid mutations
         const newCart = [...prevCart];
-        newCart[existingItemIndex].quantity += quantity;
+        const currentItem = newCart[existingItemIndex];
+        const currentQty = Number(currentItem.quantity) || 0;
+        newCart[existingItemIndex] = {
+          ...currentItem,
+          quantity: currentQty + qtyToAdd,
+        };
         return newCart;
       } else {
         // Add new item
@@ -50,9 +65,9 @@ export const CartProvider = ({ children }) => {
           {
             product_id: product.id.toString(),
             name: product.name,
-            price: parseFloat(product.price),
+            price: parseFloat(product.price) || 0,
             thumbnailUrl: product.thumbnail_url || product.thumbnailUrl || "",
-            quantity: quantity,
+            quantity: qtyToAdd,
           },
         ];
       }
@@ -64,13 +79,14 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
+    const qty = Number(quantity);
+    if (qty <= 0) {
       removeFromCart(productId);
       return;
     }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.product_id === productId.toString() ? { ...item, quantity } : item
+        item.product_id === productId.toString() ? { ...item, quantity: qty } : item
       )
     );
   };

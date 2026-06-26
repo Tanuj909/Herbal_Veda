@@ -153,3 +153,67 @@ export const deleteProduct = async (id) => {
   }
   return productRepository.deleteProduct(id);
 };
+
+/**
+ * Bulk create products.
+ * @param {Array} productsArray
+ * @returns {Promise<Array>}
+ */
+export const bulkCreateProducts = async (productsArray) => {
+  if (!Array.isArray(productsArray)) {
+    throw new Error("Input must be an array of products");
+  }
+
+  const slugsInBatch = new Set();
+  const skusInBatch = new Set();
+  const processedProducts = [];
+
+  for (let i = 0; i < productsArray.length; i++) {
+    const item = productsArray[i];
+    const name = item.name?.trim();
+    if (!name) {
+      throw new Error(`Product item at index ${i} is missing a name`);
+    }
+
+    if (!item.sku || typeof item.sku !== "string" || item.sku.trim() === "") {
+      throw new Error(`Product item at index ${i} is missing a SKU`);
+    }
+    const sku = item.sku.trim();
+
+    if (skusInBatch.has(sku.toLowerCase())) {
+      throw new Error(`Duplicate SKU "${sku}" detected in the bulk upload batch`);
+    }
+    skusInBatch.add(sku.toLowerCase());
+
+    let slug = item.slug ? item.slug.trim() : "";
+    if (!slug) {
+      slug = generateSlug(name);
+    }
+
+    if (slugsInBatch.has(slug)) {
+      throw new Error(`Duplicate slug "${slug}" detected in the bulk upload batch`);
+    }
+    slugsInBatch.add(slug);
+
+    if (item.category_id === undefined || item.category_id === null || item.category_id === "") {
+      throw new Error(`Product item at index ${i} is missing category_id`);
+    }
+
+    processedProducts.push({
+      category_id: item.category_id,
+      name,
+      slug,
+      short_description: item.short_description || "",
+      description: item.description || "",
+      price: parseFloat(item.price) || 0.00,
+      gst: item.gst !== undefined ? parseFloat(item.gst) : 0.00,
+      quantity: parseInt(item.quantity, 10) || 0,
+      sku,
+      thumbnail_url: item.thumbnail_url || "",
+      is_active: item.is_active !== undefined ? item.is_active : true,
+      images: item.images || [],
+    });
+  }
+
+  return productRepository.bulkCreateProducts(processedProducts);
+};

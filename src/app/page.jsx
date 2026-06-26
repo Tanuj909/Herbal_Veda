@@ -18,13 +18,12 @@ export default function Home() {
         {/* Immersive Hero Header */}
         <HeroSection />
 
+        {/* Curated Products */}
+        <FeaturedProducts />
+
         {/* Categories Carousel / Grid */}
         <CategoriesSection />
 
-
-
-        {/* Curated Products */}
-        <FeaturedProducts />
       </main>
 
       {/* Global Footer */}
