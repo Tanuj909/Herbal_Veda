@@ -17,7 +17,7 @@ export default function HeroSection() {
         <img
           className="w-full h-full object-cover object-[center_35%]"
           alt="A serene, high-end lifestyle photograph of organic skincare bottles resting on smooth river stones."
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSzwGZnXAxvzSFsqG-Xn-8COJyZsZa7WbWqSyhMo7uP2dkYjorW-i2ROq6pzDHFCl1ibs5RPrcB8a53kK1mPUGi19EtYun1HiM0_WzJNyCBMICu_lNEGiGoeSCpgyuZGZFEhzjJmUOmt99nrh9igjX7HQfwrsl94LJZ139Y0hHKc6m7eY7aK3MZu4cNmRIClvKZIDwgSqH_wkxgizzhVNA_fl-RYfF-JX6MdmzJOYinyysELdTyM3kB2pI3VUyGmF4gmAGu5Q1sQ"
+          src="/banners/banner.png"
         />
         <div className="absolute inset-0 bg-black/15 md:bg-black/10"></div>
         <div

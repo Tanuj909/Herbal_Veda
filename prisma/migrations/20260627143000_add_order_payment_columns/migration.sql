@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE `orders`
-  ADD COLUMN `payment_method` VARCHAR(50) NULL,
-  ADD COLUMN `payment_status` ENUM('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING';
