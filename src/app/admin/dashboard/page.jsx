@@ -16,7 +16,6 @@ export default function AdminDashboardPage() {
   const [recentOrders, setRecentOrders] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -46,74 +45,15 @@ export default function AdminDashboardPage() {
           productsList = productsRes.value.data.data;
         }
 
-        // Check if database is empty to fallback to interactive sandbox mode
-        if (statsData.totalOrders === 0 && productsList.length === 0) {
-          setIsDemoMode(true);
-          // Set Mock Demo Sandbox Stats
-          setStats({
-            revenue: 2840.0,
-            ordersCount: 38,
-            productsCount: 16,
-            usersCount: 24,
-          });
-          setRecentOrders([
-            {
-              id: "demo-101",
-              created_at: new Date(Date.now() - 4 * 3600000).toISOString(),
-              total_amount: 54.0,
-              status: "PROCESSING",
-              payment_status: "SUCCESS",
-              user: { name: "Ananya Sharma", email: "ananya@example.com" },
-            },
-            {
-              id: "demo-102",
-              created_at: new Date(Date.now() - 12 * 3600000).toISOString(),
-              total_amount: 118.0,
-              status: "CONFIRMED",
-              payment_status: "SUCCESS",
-              user: { name: "Vikram Malhotra", email: "vikram@example.com" },
-            },
-            {
-              id: "demo-103",
-              created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
-              total_amount: 32.0,
-              status: "DELIVERED",
-              payment_status: "SUCCESS",
-              user: { name: "Sneha Patel", email: "sneha@example.com" },
-            },
-            {
-              id: "demo-104",
-              created_at: new Date(Date.now() - 36 * 3600000).toISOString(),
-              total_amount: 42.0,
-              status: "PENDING",
-              payment_status: "PENDING",
-              user: { name: "Kabir Mehta", email: "kabir@example.com" },
-            },
-            {
-              id: "demo-105",
-              created_at: new Date(Date.now() - 48 * 3600000).toISOString(),
-              total_amount: 90.0,
-              status: "CANCELLED",
-              payment_status: "FAILED",
-              user: { name: "Priya Rao", email: "priya@example.com" },
-            },
-          ]);
-          setLowStockProducts([
-            { id: "demo-p1", name: "Restorative Sage Oil", sku: "OILS-SAGE-01", quantity: 3 },
-            { id: "demo-p2", name: "Clay Cleansing Mask", sku: "SKIN-CLAY-04", quantity: 4 },
-          ]);
-        } else {
-          setIsDemoMode(false);
-          setStats({
-            revenue: statsData.totalRevenue,
-            ordersCount: statsData.totalOrders,
-            productsCount: statsData.totalProducts,
-            usersCount: statsData.totalUsers,
-          });
+        setStats({
+          revenue: statsData.totalRevenue,
+          ordersCount: statsData.totalOrders,
+          productsCount: statsData.totalProducts,
+          usersCount: statsData.totalUsers,
+        });
 
-          setRecentOrders(ordersList.slice(0, 5));
-          setLowStockProducts(productsList.filter((p) => p.quantity <= 5));
-        }
+        setRecentOrders(ordersList.slice(0, 5));
+        setLowStockProducts(productsList.filter((p) => p.quantity <= 5));
       } catch (error) {
         console.error("Dashboard page data load failed:", error);
       } finally {
@@ -173,13 +113,6 @@ export default function AdminDashboardPage() {
             Store performance metrics, inventory states, and transactional analytics.
           </p>
         </div>
-
-        {isDemoMode && (
-          <span className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#FAF0E6] text-primary border border-primary/20 shadow-xs animate-fadeIn">
-            <span className="material-symbols-outlined text-[12px] font-bold">dvr</span>
-            Demo Sandbox Mode
-          </span>
-        )}
       </div>
 
       {/* Summary Cards Row */}

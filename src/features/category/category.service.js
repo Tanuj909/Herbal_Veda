@@ -60,6 +60,8 @@ const buildCategoryTree = (categories) => {
       id: idStr,
       name: cat.name,
       slug: cat.slug,
+      description: cat.description,
+      image_url: cat.image_url,
       parent_id: cat.parent_id ? cat.parent_id.toString() : null,
       is_active: cat.is_active,
       created_at: cat.created_at,
@@ -114,6 +116,8 @@ export const createCategory = async (categoryData) => {
   return categoryRepository.createCategory({
     name,
     slug,
+    description: categoryData.description || null,
+    image_url: categoryData.image_url || null,
     parent_id: categoryData.parent_id || null,
     is_active: categoryData.is_active,
   });
@@ -165,6 +169,8 @@ export const getAllCategories = async (options = {}) => {
     id: cat.id.toString(),
     name: cat.name,
     slug: cat.slug,
+    description: cat.description,
+    image_url: cat.image_url,
     parent_id: cat.parent_id ? cat.parent_id.toString() : null,
     is_active: cat.is_active,
     created_at: cat.created_at,
@@ -201,6 +207,14 @@ export const updateCategory = async (id, updateData) => {
 
   if (updateData.is_active !== undefined) {
     preparedData.is_active = updateData.is_active;
+  }
+
+  if (updateData.description !== undefined) {
+    preparedData.description = updateData.description;
+  }
+
+  if (updateData.image_url !== undefined) {
+    preparedData.image_url = updateData.image_url;
   }
 
   // Handle Parent Category Update
@@ -291,6 +305,8 @@ export const bulkCreateCategories = async (categoriesArray) => {
     processedCategories.push({
       name,
       slug,
+      description: item.description || null,
+      image_url: item.image_url || null,
       parent_id: item.parent_id || null,
       is_active: item.is_active !== undefined ? item.is_active : true,
     });

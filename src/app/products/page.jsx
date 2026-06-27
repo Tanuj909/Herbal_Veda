@@ -9,6 +9,47 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import axios from "axios";
 
+const ScrollReveal = ({ children, index, className = "", style = {} }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const domRef = React.useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    const currentRef = domRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={domRef}
+      className={`reveal-item ${isVisible ? "reveal-active" : ""} ${className}`}
+      style={{
+        ...style,
+        transitionDelay: isVisible ? `${(index % 4) * 80}ms` : "0ms",
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 function ProductsContent() {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -23,6 +64,7 @@ function ProductsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [maxPriceFilter, setMaxPriceFilter] = useState(5000);
 
   // Sync category filter with query parameter from URL
   useEffect(() => {
@@ -94,168 +136,144 @@ function ProductsContent() {
     }, 600);
   };
 
+  const filteredProducts = products.filter((prod) => {
+    const price = parseFloat(prod.price) || 0;
+    return price <= maxPriceFilter;
+  });
+
   return (
     <div className="min-h-screen bg-[#FAF6F0]/30 text-[#242926] flex flex-col font-['Inter',sans-serif]">
       <Navbar />
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 w-full">
-        {/* Page Title */}
-        <div className="mb-6">
-          {/* <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B7A75] hover:text-[#2C3E37] transition-colors"
-          >
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Back to Home
-          </Link> */}
-          <h1 className="text-2xl sm:text-3xl font-light text-[#242926] mt-2">
-            Explore Products
-          </h1>
-          <p className="text-xs sm:text-sm text-[#6B7A75] mt-1">
-            Experience Nature's finest botanical selection.
-          </p>
-        </div>
-
-        {/* Top Filters Container */}
-        <div className="bg-white border border-[#E8EDEA] p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center shadow-xs mb-8">
-          {/* Search Input */}
-          <div className="relative w-full md:max-w-md">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-[#6B7A75] pointer-events-none">
-              search
+      <main className="flex-grow w-full px-4 sm:px-8 md:px-12 pt-24 sm:pt-28 pb-16">
+        {/* Header & Controls Section */}
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-outline-variant/20 pb-6 mb-10">
+          {/* Page Title & Hero */}
+          <div className="flex-shrink-0">
+            <span className="text-tertiary font-label tracking-widest text-sm uppercase font-semibold">
+              Pure Botanicals
             </span>
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-[#E8EDEA] rounded-xl text-xs bg-white focus:outline-none focus:border-[#2C3E37]/50 placeholder:text-[#6B7A75]/50"
-            />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl text-on-surface mt-1 leading-tight whitespace-nowrap">
+              Explore Our Products
+            </h1>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="w-full md:w-auto overflow-x-auto no-scrollbar py-1">
-            <div className="flex gap-2 items-center min-w-max">
+          {/* Search & Filters Container */}
+          <div className="flex-grow bg-white/80 backdrop-blur-md border border-[#E8EDEA] p-3 sm:p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center shadow-xs lg:max-w-[70%]">
+            {/* Search Input & Mobile Filter Icon Row */}
+            <div className="flex items-center gap-2 w-full md:max-w-[280px]">
+              <div className="relative flex-grow">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-[#6B7A75] pointer-events-none">
+                  search
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search botanical treasures..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-[#E8EDEA] rounded-xl text-xs bg-white/50 focus:bg-white focus:outline-none focus:border-[#2C3E37] focus:ring-1 focus:ring-[#2C3E37]/20 transition-all duration-300 placeholder:text-[#6B7A75]/50"
+                />
+              </div>
+
+              {/* Filter Icon button (only visible next to search bar on mobile screens, hidden on desktop md+) */}
               <button
                 type="button"
-                onClick={() => setSelectedCategory("")}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  selectedCategory === ""
-                    ? "bg-[#2C3E37] text-white shadow-xs"
-                    : "bg-[#F5F8F6] text-[#6B7A75] hover:bg-[#E8EDEA] hover:text-[#2C3E37]"
-                }`}
+                onClick={() => setShowAllCategories(true)}
+                className="w-8 h-8 rounded-full bg-[#2C3E37]/10 text-[#2C3E37] hover:bg-[#2C3E37]/20 border border-transparent hover:border-[#2C3E37]/30 transition-all duration-300 cursor-pointer flex items-center justify-center shrink-0 md:hidden animate-fadeIn"
+                aria-label="Open Filters"
               >
-                All
+                <span className="material-symbols-outlined text-[18px]">tune</span>
               </button>
-              {loadingCategories ? (
-                <div className="h-6 bg-[#F5F8F6] w-32 rounded-full animate-pulse"></div>
-              ) : (
-                <>
-                  {categories.slice(0, 5).map((cat) => (
-                    <button
-                      key={cat.id.toString()}
-                      type="button"
-                      onClick={() => setSelectedCategory(cat.id.toString())}
-                      className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                        selectedCategory === cat.id.toString()
-                          ? "bg-[#2C3E37] text-white shadow-xs"
-                          : "bg-[#F5F8F6] text-[#6B7A75] hover:bg-[#E8EDEA] hover:text-[#2C3E37]"
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                  
-                  {/* If selected category is outside the first 5, show it in the main view too! */}
-                  {selectedCategory !== "" && !categories.slice(0, 5).some(c => c.id.toString() === selectedCategory) && (
-                    (() => {
-                      const selectedCat = categories.find(c => c.id.toString() === selectedCategory);
-                      return selectedCat ? (
-                        <button
-                          key={selectedCat.id.toString()}
-                          type="button"
-                          onClick={() => setSelectedCategory(selectedCat.id.toString())}
-                          className="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer bg-[#2C3E37] text-white shadow-xs"
-                        >
-                          {selectedCat.name}
-                        </button>
-                      ) : null;
-                    })()
-                  )}
+            </div>
 
-                  {categories.length > 5 && (
+            {/* Category Filter Pills */}
+            <div className="w-full md:w-auto overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex gap-2 items-center min-w-max">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("")}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
+                    selectedCategory === ""
+                      ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
+                      : "bg-[#F5F8F6] text-[#6B7A75] border border-[#E8EDEA]/60 hover:border-[#2C3E37]/30 hover:bg-white hover:text-[#2C3E37]"
+                  }`}
+                >
+                  All Products
+                </button>
+                {loadingCategories ? (
+                  <div className="h-7 bg-[#F5F8F6] w-24 rounded-full animate-pulse"></div>
+                ) : (
+                  <>
+                    {categories.slice(0, 4).map((cat) => (
+                      <button
+                        key={cat.id.toString()}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id.toString())}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
+                          selectedCategory === cat.id.toString()
+                            ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
+                            : "bg-[#F5F8F6] text-[#6B7A75] border border-[#E8EDEA]/60 hover:border-[#2C3E37]/30 hover:bg-white hover:text-[#2C3E37]"
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                    
+                    {/* If selected category is outside the first 5, show it in the main view too! */}
+                    {selectedCategory !== "" && !categories.slice(0, 5).some(c => c.id.toString() === selectedCategory) && (
+                      (() => {
+                        const selectedCat = categories.find(c => c.id.toString() === selectedCategory);
+                        return selectedCat ? (
+                          <button
+                            key={selectedCat.id.toString()}
+                            type="button"
+                            onClick={() => setSelectedCategory(selectedCat.id.toString())}
+                            className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
+                          >
+                            {selectedCat.name}
+                          </button>
+                        ) : null;
+                      })()
+                    )}
+
+                    {/* Filter Icon button (only visible on desktop md+, hidden on mobile) */}
                     <button
                       type="button"
                       onClick={() => setShowAllCategories(true)}
-                      className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#2C3E37]/10 text-[#2C3E37] hover:bg-[#2C3E37]/20 transition-all cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-[#2C3E37]/10 text-[#2C3E37] hover:bg-[#2C3E37]/20 border border-transparent hover:border-[#2C3E37]/30 transition-all duration-300 cursor-pointer hidden md:flex items-center justify-center shrink-0"
+                      aria-label="Open Filters"
                     >
-                      More +
+                      <span className="material-symbols-outlined text-[18px]">tune</span>
                     </button>
-                  )}
-
-                  {/* Micro-Modal for More Categories */}
-                  {showAllCategories && (
-                    <>
-                      {/* Backdrop */}
-                      <div
-                        className="fixed inset-0 bg-black/20 z-40 backdrop-blur-xs transition-opacity duration-300"
-                        onClick={() => setShowAllCategories(false)}
-                      />
-                      {/* Modal Dialog */}
-                      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-2xl p-5 border border-[#E8EDEA] shadow-xl z-50 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-sm font-semibold text-[#2C3E37]">More Categories</h3>
-                          <button
-                            type="button"
-                            onClick={() => setShowAllCategories(false)}
-                            className="text-[#6B7A75] hover:text-[#2C3E37] text-xs font-semibold p-1 cursor-pointer"
-                          >
-                            Close
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto py-1">
-                          {categories.slice(5).map((cat) => (
-                            <button
-                              key={cat.id.toString()}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCategory(cat.id.toString());
-                                setShowAllCategories(false);
-                              }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                                selectedCategory === cat.id.toString()
-                                  ? "bg-[#2C3E37] text-white shadow-xs"
-                                  : "bg-[#F5F8F6] text-[#6B7A75] hover:bg-[#E8EDEA] hover:text-[#2C3E37]"
-                              }`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Products Display */}
         {loadingProducts ? (
           /* Grid Skeletons */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="bg-white rounded-xl border border-[#E8EDEA] overflow-hidden animate-pulse">
-                <div className="h-48 sm:h-56 bg-[#F5F8F6]"></div>
-                <div className="p-4 sm:p-5 space-y-3">
-                  <div className="h-4 bg-[#E8EDEA] rounded w-3/4"></div>
-                  <div className="h-4 bg-[#E8EDEA] rounded w-1/4"></div>
-                  <div className="h-8 bg-[#E8EDEA] rounded pt-2"></div>
+              <div key={i} className="bg-white rounded-2xl border border-[#E8EDEA] overflow-hidden animate-pulse flex flex-col">
+                <div className="aspect-[4/3] w-full bg-[#F5F8F6]"></div>
+                <div className="p-5 flex-1 space-y-4">
+                  <div className="space-y-2">
+                    <div className="h-3 bg-[#F5F8F6] rounded w-1/4"></div>
+                    <div className="h-5 bg-[#F5F8F6] rounded w-3/4"></div>
+                    <div className="h-4 bg-[#F5F8F6] rounded w-1/3"></div>
+                  </div>
+                  <div className="flex gap-2 pt-4 border-t border-[#F0F3F1]">
+                    <div className="h-9 bg-[#F5F8F6] rounded-xl flex-1"></div>
+                    <div className="h-9 bg-[#F5F8F6] rounded-xl w-[90px]"></div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           /* Empty Search State */
           <div className="text-center py-16 bg-white rounded-2xl border border-[#E8EDEA] p-8 shadow-xs flex flex-col items-center max-w-sm mx-auto mt-4">
             <div className="w-14 h-14 rounded-full bg-[#F5F8F6] text-[#6B7A75] flex items-center justify-center mb-4">
@@ -263,13 +281,14 @@ function ProductsContent() {
             </div>
             <h3 className="text-base font-semibold text-[#242926]">No products found</h3>
             <p className="text-xs text-[#6B7A75] mt-1.5 text-center max-w-xs">
-              We couldn't find any products matching your current criteria. Try altering your keywords or filters.
+              We couldn't find any products matching your current criteria or price limit. Try altering your filters.
             </p>
             <button
               type="button"
               onClick={() => {
                 setSearchQuery("");
                 setSelectedCategory("");
+                setMaxPriceFilter(5000);
               }}
               className="mt-5 px-5 py-2 border border-[#2C3E37] text-[#2C3E37] text-xs font-semibold rounded-full hover:bg-[#2C3E37] hover:text-white transition-all active:scale-95 cursor-pointer"
             >
@@ -277,122 +296,130 @@ function ProductsContent() {
             </button>
           </div>
         ) : (
-          /* Products Grid matching FeaturedProducts exactly */
+          /* Products Grid */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {products.map((prod) => {
+            {filteredProducts.map((prod, index) => {
               const productId = prod.id.toString();
               const isFav = isInWishlist(productId);
               const formattedPrice = parseFloat(prod.price) || 0.0;
-              const imageUrl = prod.thumbnail_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
+              const imageUrl = prod.thumbnail_url || (prod.images && prod.images[0]?.image_url) || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
 
               return (
-                <div
+                <ScrollReveal
                   key={productId}
-                  className="group bg-white rounded-xl border border-[#E8EDEA] overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
+                  index={index}
                 >
-                  {/* Product Thumbnail */}
-                  <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5F8F6]">
-                    <img
-                      src={imageUrl}
-                      alt={prod.name}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                      loading="lazy"
-                    />
+                  <div className="group bg-white rounded-2xl border border-[#E8EDEA] overflow-hidden hover:shadow-xl hover:border-[#2C3E37]/15 transition-all duration-500 flex flex-col h-full">
+                    {/* Product Thumbnail */}
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F5F8F6] border-b border-[#F0F3F1]">
+                      <img
+                        src={imageUrl}
+                        alt={prod.name}
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        loading="lazy"
+                      />
 
-                    {/* Category Badge */}
-                    {prod.category && (
-                      <span className="absolute top-3 left-3 text-[9px] sm:text-[10px] font-medium tracking-wide uppercase bg-white/95 text-[#2C3E37] px-2.5 py-1 rounded-md shadow-sm">
-                        {prod.category.name}
-                      </span>
-                    )}
+                      {/* Category Badge */}
+                      {prod.category && (
+                        <span className="absolute top-4 left-4 text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase backdrop-blur-md bg-white/80 text-[#2C3E37] px-2.5 py-1.5 rounded-lg shadow-xs">
+                          {prod.category.name}
+                        </span>
+                      )}
 
-                    {/* Wishlist Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={() => toggleWishlist(prod.id)}
-                      className={`absolute top-3 right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 shadow-sm flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer ${
-                        isFav
-                          ? "text-red-500 opacity-100"
-                          : "text-[#6B7A75] hover:text-red-500 opacity-0 group-hover:opacity-100"
-                      }`}
-                      aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
-                    >
-                      <svg
-                        className="w-4 h-4 sm:w-5 sm:h-5"
-                        fill={isFav ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.5"
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Quick action overlay on hover */}
-                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Link
-                        href={`/product/${productId}`}
-                        className="w-full py-2 bg-white/95 text-[#242926] text-xs font-medium rounded-lg text-center hover:bg-white transition-colors block"
-                      >
-                        Quick View
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <h3 className="text-sm sm:text-base font-medium text-[#242926] line-clamp-2 flex-1 group-hover:text-[#2C3E37] transition-colors">
-                        {prod.name}
-                      </h3>
-                      <span className="text-base sm:text-lg font-light text-[#242926] whitespace-nowrap flex-shrink-0">
-                        ₹{formattedPrice.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 mt-auto pt-3 border-t border-[#F0F3F1]">
-                      <Link
-                        href={`/product/${productId}`}
-                        className="flex-1 py-2 px-3 bg-[#F5F8F6] text-[#242926] text-xs font-medium rounded-lg text-center hover:bg-[#E8EDEA] transition-colors"
-                      >
-                        View Product
-                      </Link>
+                      {/* Wishlist Toggle Button */}
                       <button
                         type="button"
-                        onClick={() => handleAddToCart(prod)}
-                        disabled={addingId === productId}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all duration-200 min-w-[80px] cursor-pointer ${
-                          addedIds[productId]
-                            ? "bg-[#F0F3F1] text-[#2C3E37]"
-                            : "bg-[#2C3E37] text-white hover:bg-[#1E2D27] hover:shadow-sm disabled:opacity-60"
+                        onClick={() => toggleWishlist(prod.id)}
+                        className={`absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs shadow-sm flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white cursor-pointer ${
+                          isFav
+                            ? "text-red-500 opacity-100 bg-white"
+                            : "text-[#6B7A75] hover:text-red-500 opacity-0 group-hover:opacity-100"
                         }`}
+                        aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
                       >
-                        {addingId === productId ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : addedIds[productId] ? (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Added
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                            </svg>
-                            Add
-                          </>
-                        )}
+                        <svg
+                          className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-105"
+                          fill={isFav ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.5"
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
                       </button>
+
+                      {/* Quick action overlay on hover */}
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                        <Link
+                          href={`/product/${productId}`}
+                          className="w-[85%] py-2.5 bg-white/95 text-[#242926] text-xs font-semibold rounded-xl text-center hover:bg-white transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shadow-sm"
+                        >
+                          Quick View
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="p-5 flex-1 flex flex-col">
+                      <div className="flex flex-col gap-1 mb-4">
+                        {/* <span className="text-[10px] font-semibold text-[#6B7A75]/80 uppercase tracking-widest">
+                          {prod.category?.name || "Botanical"}
+                        </span> */}
+                        <h3 className="text-sm sm:text-base font-semibold text-[#242926] line-clamp-2 group-hover:text-[#2C3E37] transition-colors leading-snug">
+                          {prod.name}
+                        </h3>
+                        <div className="flex items-baseline gap-1 mt-1">
+                          <span className="text-base sm:text-lg font-bold text-[#0D5C2F]">
+                            ₹{formattedPrice.toFixed(2)}
+                          </span>
+                          {/* <span className="text-[10px] text-[#6B7A75]">tax inc.</span> */}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 mt-auto pt-4 border-t border-[#F0F3F1]">
+                        <Link
+                          href={`/product/${productId}`}
+                          className="flex-1 py-2.5 px-3 bg-[#F5F8F6] text-[#242926] text-xs font-medium rounded-xl text-center border border-transparent hover:border-[#2C3E37]/15 hover:bg-[#E8EDEA] transition-all duration-300"
+                        >
+                          Details
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleAddToCart(prod)}
+                          disabled={addingId === productId}
+                          className={`py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 min-w-[90px] cursor-pointer ${
+                            addedIds[productId]
+                              ? "bg-[#E8EDEA] text-[#2C3E37] shadow-xs"
+                              : "bg-[#2C3E37] text-white hover:bg-[#1E2D27] hover:shadow-md hover:shadow-[#2C3E37]/10 disabled:opacity-60"
+                          }`}
+                        >
+                          {addingId === productId ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : addedIds[productId] ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                              </svg>
+                              Added
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                              </svg>
+                              Add
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -400,6 +427,77 @@ function ProductsContent() {
       </main>
 
       <Footer />
+
+      {/* Micro-Modal for Filters & Categories */}
+      {showAllCategories && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity duration-300"
+            onClick={() => setShowAllCategories(false)}
+          />
+          {/* Modal Dialog */}
+          <div className="relative w-full max-w-sm bg-[#FAF6F0] rounded-3xl p-6 border border-[#2C3E37]/15 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-5 border-b border-[#2C3E37]/10 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#2C3E37] text-xl">tune</span>
+                <h3 className="text-base font-bold text-[#2C3E37] tracking-tight">Filters & Categories</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAllCategories(false)}
+                className="text-[#6B7A75] hover:text-[#2C3E37] hover:bg-[#2C3E37]/5 transition-all duration-200 p-1 rounded-full cursor-pointer flex items-center justify-center w-7 h-7"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+
+            {/* Price Limit Filter inside the Modal */}
+            <div className="flex flex-col gap-2 border-b border-[#2C3E37]/10 pb-5 mb-5 select-none">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2C3E37] mb-1">
+                <span className="material-symbols-outlined text-base">payments</span>
+                <span>Price Limit</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-semibold text-[#6B7A75]">
+                <span>Max budget</span>
+                <span className="text-[#0D5C2F] text-sm font-bold">₹{maxPriceFilter}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="5000"
+                step="100"
+                value={maxPriceFilter}
+                onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
+                className="w-full h-1 bg-[#2C3E37]/10 rounded-lg appearance-none cursor-pointer accent-[#0D5C2F]"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <span className="text-xs font-semibold text-[#2C3E37]">Select Category</span>
+              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto py-1 pr-1 no-scrollbar">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id.toString()}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat.id.toString());
+                      setShowAllCategories(false);
+                    }}
+                    className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
+                      selectedCategory === cat.id.toString()
+                        ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/15"
+                        : "bg-white text-[#6B7A75] border border-[#2C3E37]/10 hover:border-[#2C3E37]/35 hover:text-[#2C3E37]"
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

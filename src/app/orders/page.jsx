@@ -530,6 +530,7 @@ export default function OrdersPage() {
                                 <img
                                   src={
                                     item.product?.thumbnail_url ||
+                                    (item.product?.images && item.product?.images[0]?.image_url) ||
                                     "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=200"
                                   }
                                   alt={item.product_name}
@@ -618,7 +619,7 @@ export default function OrdersPage() {
                               <PaymentStatusBadge status={order.payment_status} />
                             </div>
                             <div className="flex justify-between items-center pt-2.5 mt-0.5 border-t border-[#E2E8E4]">
-                              <span className="text-sm font-semibold text-[#242926]">Total Paid</span>
+                              <span className="text-sm font-semibold text-[#242926]">Total </span>
                               <span className="text-sm font-bold text-[#2C3E37]">
                                 {formatPrice(order.total_amount)}
                               </span>

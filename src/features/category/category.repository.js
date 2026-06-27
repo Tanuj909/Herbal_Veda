@@ -61,11 +61,13 @@ export const findAllCategories = async (filters = {}) => {
  * @returns {Promise<Object>}
  */
 export const createCategory = async (categoryData) => {
-  const { name, slug, parent_id, is_active } = categoryData;
+  const { name, slug, parent_id, is_active, description, image_url } = categoryData;
   
   const data = {
     name,
     slug,
+    description: description || null,
+    image_url: image_url || null,
     is_active: is_active !== undefined ? is_active : true,
   };
 
@@ -89,6 +91,8 @@ export const updateCategory = async (id, updateData) => {
 
   if (updateData.name !== undefined) data.name = updateData.name;
   if (updateData.slug !== undefined) data.slug = updateData.slug;
+  if (updateData.description !== undefined) data.description = updateData.description;
+  if (updateData.image_url !== undefined) data.image_url = updateData.image_url;
   if (updateData.is_active !== undefined) data.is_active = updateData.is_active;
 
   if (updateData.parent_id !== undefined) {
@@ -170,6 +174,8 @@ export const bulkCreateCategories = async (categories) => {
         data: {
           name: cat.name,
           slug: cat.slug,
+          description: cat.description || null,
+          image_url: cat.image_url || null,
           parent_id: parent_id_bigint,
           is_active: cat.is_active,
         }

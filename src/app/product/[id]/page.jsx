@@ -132,7 +132,7 @@ export default function ProductDetailsPage({ params }) {
   const isFav = isInWishlist(product.id.toString());
   const price = parseFloat(product.price) || 0.0;
   const inStock = product.quantity > 0;
-  const mainImage = product.thumbnail_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
+  const mainImage = product.thumbnail_url || (product.images && product.images[0]?.image_url) || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]/30 text-[#242926] flex flex-col font-['Inter',sans-serif]">
@@ -200,11 +200,11 @@ export default function ProductDetailsPage({ params }) {
                   <span className="text-2xl sm:text-3xl font-light text-[#242926]">
                     ₹{price.toFixed(2)}
                   </span>
-                  {product.gst && parseFloat(product.gst) > 0 && (
+                  {/* {product.gst && parseFloat(product.gst) > 0 && (
                     <span className="text-[10px] font-semibold text-[#6B7A75] bg-[#FAF6F0] px-2 py-0.5 rounded border border-[#E8EDEA]">
                       GST {parseFloat(product.gst)}% included
                     </span>
-                  )}
+                  )} */}
                 </div>
 
                 {/* Stock and SKU info */}
@@ -351,7 +351,7 @@ export default function ProductDetailsPage({ params }) {
               {relatedProducts.map((item) => {
                 const isItemFav = isInWishlist(item.id.toString());
                 const itemPrice = parseFloat(item.price) || 0.0;
-                const itemImage = item.thumbnail_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
+                const itemImage = item.thumbnail_url || (item.images && item.images[0]?.image_url) || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
                 const itemId = item.id.toString();
 
                 return (

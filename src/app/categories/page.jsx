@@ -19,7 +19,7 @@ const getBentoClasses = (index) => {
   switch (mod) {
     case 0:
       return {
-        colSpan: "md:col-span-8 md:row-span-2 min-h-[240px] md:min-h-0",
+        colSpan: "md:col-span-8 md:row-span-2 min-h-[210px] md:min-h-0",
         overlay: "bg-black/45 group-hover:bg-black/30",
         padding: "p-6 md:p-8",
         titleSize: "text-2xl sm:text-3xl",
@@ -69,6 +69,47 @@ const getBentoClasses = (index) => {
   }
 };
 
+const ScrollReveal = ({ children, index, className = "", style = {} }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const domRef = React.useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    const currentRef = domRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={domRef}
+      className={`reveal-item ${isVisible ? "reveal-active" : ""} ${className}`}
+      style={{
+        ...style,
+        transitionDelay: isVisible ? `${(index % 4) * 80}ms` : "0ms",
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,15 +134,15 @@ export default function CategoriesPage() {
     <div className="min-h-screen bg-background text-on-surface flex flex-col font-body">
       <Navbar />
 
-      <main className="flex-grow max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 w-full">
+      <main className="flex-grow w-full px-4 sm:px-8 md:px-12 pt-24 sm:pt-28 pb-24">
         {/* Hero Section & Filters */}
-        <header className="mb-16">
+        <header className="mb-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-outline-variant/20 pb-8">
             <div className="max-w-2xl">
               <span className="text-tertiary font-label tracking-widest text-sm uppercase font-semibold">
                 Curated Collections
               </span>
-              <h1 className="text-5xl md:text-6xl text-on-surface mt-2 leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl text-on-surface mt-2 leading-tight whitespace-nowrap">
                 Explore Nature's Finest
               </h1>
             </div>
@@ -119,7 +160,7 @@ export default function CategoriesPage() {
 
         {/* Loading Skeletons */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[180px]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[150px]">
             {[1, 2, 3, 4, 5].map((i, idx) => {
               const layout = getBentoClasses(idx);
               return (
@@ -146,7 +187,7 @@ export default function CategoriesPage() {
           </div>
         ) : (
           /* Bento Grid Categories */
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[180px]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[150px]">
             {categories.map((cat, index) => {
               const layout = getBentoClasses(index);
               const imgUrl = cat.image_url || FALLBACK_IMAGES[index % 5];
@@ -154,63 +195,73 @@ export default function CategoriesPage() {
               if (layout.flexRow) {
                 // Wide Card Layout (Index 4)
                 return (
-                  <Link
+                  <ScrollReveal
                     key={cat.id.toString()}
+                    index={index}
+                    className={layout.colSpan}
+                  >
+                    <Link
+                      href={`/products?category_id=${cat.id}`}
+                      className="category-card relative group overflow-hidden rounded-xl bg-surface-container-low transition-all duration-700 cursor-pointer w-full h-full block"
+                    >
+                      <div
+                        className="card-image absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out"
+                        style={{ backgroundImage: `url('${imgUrl}')` }}
+                      ></div>
+                      <div className={`overlay absolute inset-0 transition-all duration-500 ${layout.overlay}`}></div>
+                      <div className="absolute inset-0 px-8 py-6 md:px-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-2xl sm:text-3xl text-white font-headline font-bold">{cat.name}</h3>
+                          {cat.description && (
+                            <p className="text-white/80 font-body text-sm mt-1 max-w-md line-clamp-1">{cat.description}</p>
+                          )}
+                        </div>
+                        <span className="bg-white text-[#2C3E37] px-6 py-2 rounded-full font-label text-sm hover:scale-105 transition-transform flex-shrink-0">
+                          Browse Collection
+                        </span>
+                      </div>
+                    </Link>
+                  </ScrollReveal>
+                );
+              }
+
+              // Standard Cards Layout (Index 0, 1, 2, 3)
+              return (
+                <ScrollReveal
+                  key={cat.id.toString()}
+                  index={index}
+                  className={layout.colSpan}
+                >
+                  <Link
                     href={`/products?category_id=${cat.id}`}
-                    className={`category-card relative group overflow-hidden rounded-xl bg-surface-container-low transition-all duration-700 cursor-pointer ${layout.colSpan}`}
+                    className="category-card relative group overflow-hidden rounded-xl bg-surface-container-low transition-all duration-700 cursor-pointer w-full h-full block"
                   >
                     <div
                       className="card-image absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out"
                       style={{ backgroundImage: `url('${imgUrl}')` }}
                     ></div>
                     <div className={`overlay absolute inset-0 transition-all duration-500 ${layout.overlay}`}></div>
-                    <div className="absolute inset-0 px-8 py-6 md:px-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                        <h3 className="text-2xl sm:text-3xl text-white font-headline font-bold">{cat.name}</h3>
-                        {cat.description && (
-                          <p className="text-white/80 font-body text-sm mt-1 max-w-md line-clamp-1">{cat.description}</p>
-                        )}
+                    <div className={`absolute inset-0 flex flex-col justify-end ${layout.padding}`}>
+                      {index % 5 === 0 && (
+                        <span className="text-on-primary-container bg-primary-container/80 backdrop-blur-md self-start px-3 py-1 rounded-full text-[10px] font-label uppercase tracking-widest mb-4">
+                          Featured Collection
+                        </span>
+                      )}
+                      <h3 className={`${layout.titleSize} text-white font-headline leading-tight`}>
+                        {cat.name}
+                      </h3>
+                      {layout.showDesc && cat.description && (
+                        <p className="text-white/80 mt-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 font-body text-sm leading-relaxed">
+                          {cat.description}
+                        </p>
+                      )}
+                      <div className="mt-4 flex items-center gap-2 text-white group-hover:gap-4 transition-all duration-300">
+                        <span className="font-label text-sm">Explore Collection</span>
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
                       </div>
-                      <span className="bg-white text-[#2C3E37] px-6 py-2 rounded-full font-label text-sm hover:scale-105 transition-transform flex-shrink-0">
-                        Browse Collection
-                      </span>
                     </div>
                   </Link>
-                );
-              }
-
-              // Standard Cards Layout (Index 0, 1, 2, 3)
-              return (
-                <Link
-                  key={cat.id.toString()}
-                  href={`/products?category_id=${cat.id}`}
-                  className={`category-card relative group overflow-hidden rounded-xl bg-surface-container-low transition-all duration-700 cursor-pointer ${layout.colSpan}`}
-                >
-                  <div
-                    className="card-image absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out"
-                    style={{ backgroundImage: `url('${imgUrl}')` }}
-                  ></div>
-                  <div className={`overlay absolute inset-0 transition-all duration-500 ${layout.overlay}`}></div>
-                  <div className={`absolute inset-0 flex flex-col justify-end ${layout.padding}`}>
-                    {index % 5 === 0 && (
-                      <span className="text-on-primary-container bg-primary-container/80 backdrop-blur-md self-start px-3 py-1 rounded-full text-[10px] font-label uppercase tracking-widest mb-4">
-                        Featured Collection
-                      </span>
-                    )}
-                    <h3 className={`${layout.titleSize} text-white font-headline leading-tight`}>
-                      {cat.name}
-                    </h3>
-                    {layout.showDesc && cat.description && (
-                      <p className="text-white/80 mt-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 font-body text-sm leading-relaxed">
-                        {cat.description}
-                      </p>
-                    )}
-                    <div className="mt-4 flex items-center gap-2 text-white group-hover:gap-4 transition-all duration-300">
-                      <span className="font-label text-sm">Explore Collection</span>
-                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                    </div>
-                  </div>
-                </Link>
+                </ScrollReveal>
               );
             })}
           </div>

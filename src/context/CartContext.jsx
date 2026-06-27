@@ -1,17 +1,22 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
+  const { user } = useAuth();
   const [cart, setCart] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load cart from localStorage on mount
+  const userId = user?.id || "guest";
+
+  // Load cart from localStorage whenever userId changes
   useEffect(() => {
     try {
-      const storedCart = localStorage.getItem("veda_cart");
+      const key = `veda_cart_${userId}`;
+      const storedCart = localStorage.getItem(key);
       if (storedCart) {
         const parsed = JSON.parse(storedCart);
         if (Array.isArray(parsed)) {
@@ -22,24 +27,30 @@ export const CartProvider = ({ children }) => {
             price: Number(item.price) || 0,
           }));
           setCart(sanitized);
+        } else {
+          setCart([]);
         }
+      } else {
+        setCart([]);
       }
     } catch (error) {
       console.error("Failed to load cart from local storage:", error);
+      setCart([]);
     } finally {
       setIsInitialized(true);
     }
-  }, []);
+  }, [userId]);
 
   // Sync cart to localStorage whenever it changes
   useEffect(() => {
     if (!isInitialized) return;
     try {
-      localStorage.setItem("veda_cart", JSON.stringify(cart));
+      const key = `veda_cart_${userId}`;
+      localStorage.setItem(key, JSON.stringify(cart));
     } catch (error) {
       console.error("Failed to save cart to local storage:", error);
     }
-  }, [cart, isInitialized]);
+  }, [cart, userId, isInitialized]);
 
   const addToCart = (product, quantity = 1) => {
     const qtyToAdd = Number(quantity) || 1;

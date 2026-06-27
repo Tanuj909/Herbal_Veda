@@ -23,86 +23,6 @@ export default function AdminOrdersPage() {
     setTimeout(() => setAlert(null), 4000);
   };
 
-  const MOCK_ORDERS = [
-    {
-      id: "demo-101",
-      created_at: new Date(Date.now() - 4 * 3600000).toISOString(),
-      total_amount: 54.0,
-      status: "PROCESSING",
-      payment_status: "SUCCESS",
-      payment_method: "Credit Card",
-      user: { name: "Ananya Sharma", email: "ananya@example.com", phone: "9876543211" },
-      address: {
-        full_name: "Ananya Sharma",
-        phone: "9876543211",
-        address_line1: "Apt 4B, Forest Heights",
-        city: "Mumbai",
-        state: "Maharashtra",
-        postal_code: "400001",
-        country: "India",
-      },
-      items: [
-        {
-          id: "item-1",
-          quantity: 2,
-          price: 27.0,
-          product: { name: "Restorative Sage Oil", sku: "OILS-SAGE-01" },
-        },
-      ],
-    },
-    {
-      id: "demo-102",
-      created_at: new Date(Date.now() - 12 * 3600000).toISOString(),
-      total_amount: 118.0,
-      status: "CONFIRMED",
-      payment_status: "SUCCESS",
-      payment_method: "UPI",
-      user: { name: "Vikram Malhotra", email: "vikram@example.com", phone: "9876543212" },
-      address: {
-        full_name: "Vikram Malhotra",
-        phone: "9876543212",
-        address_line1: "12, Green Glen Layout",
-        city: "Bengaluru",
-        state: "Karnataka",
-        postal_code: "560103",
-        country: "India",
-      },
-      items: [
-        {
-          id: "item-2",
-          quantity: 1,
-          price: 118.0,
-          product: { name: "Hydrating Botanical Serum", sku: "SKIN-SERUM-03" },
-        },
-      ],
-    },
-    {
-      id: "demo-103",
-      created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
-      total_amount: 32.0,
-      status: "DELIVERED",
-      payment_status: "SUCCESS",
-      payment_method: "Debit Card",
-      user: { name: "Sneha Patel", email: "sneha@example.com", phone: "9876543213" },
-      address: {
-        full_name: "Sneha Patel",
-        phone: "9876543213",
-        address_line1: "Flat 201, Palm Groves",
-        city: "Pune",
-        state: "Maharashtra",
-        postal_code: "411001",
-        country: "India",
-      },
-      items: [
-        {
-          id: "item-3",
-          quantity: 1,
-          price: 32.0,
-          product: { name: "Clay Cleansing Mask", sku: "SKIN-CLAY-04" },
-        },
-      ],
-    },
-  ];
 
   const loadOrders = async () => {
     try {
@@ -111,14 +31,14 @@ export default function AdminOrdersPage() {
       };
 
       const response = await axios.get("/api/orders", config);
-      if (response.data && response.data.success && response.data.data.length > 0) {
-        setOrders(response.data.data);
+      if (response.data && response.data.success) {
+        setOrders(response.data.data || []);
       } else {
-        setOrders(MOCK_ORDERS);
+        setOrders([]);
       }
     } catch (error) {
       console.error("Failed to load orders data:", error);
-      setOrders(MOCK_ORDERS); // Fallback to mock on error
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -131,19 +51,6 @@ export default function AdminOrdersPage() {
   // Handle status update
   const handleUpdateStatus = async (orderId, newStatus) => {
     setUpdatingId(orderId);
-
-    // Mock update
-    if (orderId.toString().startsWith("demo-")) {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-      );
-      if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder((prev) => ({ ...prev, status: newStatus }));
-      }
-      setUpdatingId(null);
-      triggerAlert("success", `Mock order status updated to ${newStatus}`);
-      return;
-    }
 
     try {
       const config = {

@@ -24,6 +24,8 @@ export default function AdminCategoriesPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   // Alert State
   const [alert, setAlert] = useState(null);
@@ -69,11 +71,15 @@ export default function AdminCategoriesPage() {
       setName(category.name);
       setSlug(category.slug);
       setIsActive(category.is_active);
+      setDescription(category.description || "");
+      setImageUrl(category.image_url || "");
     } else {
       setEditingId(null);
       setName("");
       setSlug("");
       setIsActive(true);
+      setDescription("");
+      setImageUrl("");
     }
     setModalOpen(false);
     setTimeout(() => setModalOpen(true), 50);
@@ -139,6 +145,8 @@ export default function AdminCategoriesPage() {
       slug: formattedSlug,
       parent_id: null,
       is_active: isActive,
+      description: description.trim() || null,
+      image_url: imageUrl.trim() || null,
     };
 
     try {
@@ -179,15 +187,26 @@ export default function AdminCategoriesPage() {
     return (
       <tr key={category.id} className="hover:bg-surface-container-lowest/30 transition-colors">
         <td className="p-4">
-          <div className="flex items-center gap-2">
-            {/* <span className="font-mono text-[10px] text-on-surface-variant font-medium bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/15 select-all">
-              {category.id}
-            </span> */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg overflow-hidden border border-outline-variant/30 flex-shrink-0 bg-[#F5F8F6]">
+              <img
+                src={category.image_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=150"}
+                alt={category.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div>
-              <span className="font-semibold text-on-surface text-xs">{category.name}</span>
-              <span className="text-[10px] text-on-surface-variant font-mono font-light ml-2 bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/15">
-                /{category.slug}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-on-surface text-xs">{category.name}</span>
+                <span className="text-[10px] text-on-surface-variant font-mono font-light bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/15">
+                  /{category.slug}
+                </span>
+              </div>
+              {category.description && (
+                <p className="text-[10px] text-on-surface-variant line-clamp-1 max-w-sm mt-0.5 font-light leading-normal">
+                  {category.description}
+                </p>
+              )}
             </div>
           </div>
         </td>
@@ -370,6 +389,30 @@ export default function AdminCategoriesPage() {
                   }}
                   placeholder="Custom Slug"
                   className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 font-mono"
+                />
+              </div>
+
+              {/* Category Image URL */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-on-surface">Category Image URL</label>
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="e.g. https://images.unsplash.com/photo-..."
+                  className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-on-surface">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of the category..."
+                  rows={2}
+                  className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 resize-none font-body"
                 />
               </div>
 

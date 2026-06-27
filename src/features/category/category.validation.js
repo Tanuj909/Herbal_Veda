@@ -5,7 +5,7 @@
  */
 export const validateCreateCategory = (data) => {
   const errors = {};
-  const { name, slug, parent_id, is_active } = data;
+  const { name, slug, parent_id, is_active, description, image_url } = data;
 
   // Validate Name
   if (!name || typeof name !== "string" || name.trim() === "") {
@@ -22,6 +22,22 @@ export const validateCreateCategory = (data) => {
       errors.slug = "Slug cannot exceed 150 characters";
     } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
       errors.slug = "Invalid slug format. Use lowercase alphanumeric characters and hyphens (e.g. herbal-teas)";
+    }
+  }
+
+  // Validate Description if provided
+  if (description !== undefined && description !== null) {
+    if (typeof description !== "string") {
+      errors.description = "Description must be a string";
+    }
+  }
+
+  // Validate Image URL if provided
+  if (image_url !== undefined && image_url !== null && image_url !== "") {
+    if (typeof image_url !== "string") {
+      errors.image_url = "Image URL must be a string";
+    } else if (image_url.length > 255) {
+      errors.image_url = "Image URL cannot exceed 255 characters";
     }
   }
 
@@ -53,7 +69,7 @@ export const validateCreateCategory = (data) => {
  */
 export const validateUpdateCategory = (data) => {
   const errors = {};
-  const { name, slug, parent_id, is_active } = data;
+  const { name, slug, parent_id, is_active, description, image_url } = data;
 
   // Validate Name if provided
   if (name !== undefined) {
@@ -72,6 +88,22 @@ export const validateUpdateCategory = (data) => {
       errors.slug = "Slug cannot exceed 150 characters";
     } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
       errors.slug = "Invalid slug format. Use lowercase alphanumeric characters and hyphens";
+    }
+  }
+
+  // Validate Description if provided
+  if (description !== undefined && description !== null) {
+    if (typeof description !== "string") {
+      errors.description = "Description must be a string";
+    }
+  }
+
+  // Validate Image URL if provided
+  if (image_url !== undefined && image_url !== null) {
+    if (typeof image_url !== "string") {
+      errors.image_url = "Image URL must be a string";
+    } else if (image_url.length > 255) {
+      errors.image_url = "Image URL cannot exceed 255 characters";
     }
   }
 

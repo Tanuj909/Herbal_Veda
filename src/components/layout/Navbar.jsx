@@ -53,10 +53,10 @@ export default function Navbar() {
           <img
             src="/logo/logo.png"
             alt="The Herbal Veda Logo"
-            className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full border border-[#E8EDEA]"
+            className="w-12 h-12 sm:w-14 sm:h-14 object-contain mix-blend-multiply"
           />
-          <span className="font-headline text-base sm:text-lg lg:text-xl font-bold tracking-tight text-[#138D45] whitespace-nowrap">
-            The Herbal <span className="text-[#6FB74B]">Veda</span>
+          <span className="font-headline text-base sm:text-lg lg:text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#0D5C2F] to-[#4A8F3B] bg-clip-text text-transparent whitespace-nowrap">
+            The Herbal Veda
           </span>
         </Link>
 

@@ -130,7 +130,7 @@ export default function WishlistPage() {
                   {/* Product Thumbnail */}
                   <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5F8F6]">
                     <img
-                      src={prod.thumbnail_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600"}
+                      src={prod.thumbnail_url || (prod.images && prod.images[0]?.image_url) || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600"}
                       alt={prod.name}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       loading="lazy"

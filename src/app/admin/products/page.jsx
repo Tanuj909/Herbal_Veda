@@ -5,7 +5,7 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AdminProductsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +21,12 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Bulk Upload States
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [bulkJson, setBulkJson] = useState("");
+  const [bulkFile, setBulkFile] = useState(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
 
   // Form Fields
   const [name, setName] = useState("");
@@ -91,7 +97,7 @@ export default function AdminProductsPage() {
       setCategoryId(product.category_id ? product.category_id.toString() : "");
       setShortDescription(product.short_description || "");
       setDescription(product.description || "");
-      setThumbnailUrl(product.thumbnail_url || "");
+      setThumbnailUrl(product.thumbnail_url || (product.images && product.images[0]?.image_url) || "");
       setIsActive(product.is_active);
     } else {
       setEditingId(null);
@@ -202,6 +208,44 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Bulk upload handler
+  const handleBulkUpload = async (e) => {
+    e.preventDefault();
+    setBulkImporting(true);
+
+    try {
+      let parsedData = null;
+      if (bulkFile) {
+        const text = await bulkFile.text();
+        parsedData = JSON.parse(text);
+      } else if (bulkJson.trim()) {
+        parsedData = JSON.parse(bulkJson);
+      } else {
+        throw new Error("Please select a JSON file or paste product data.");
+      }
+
+      if (!Array.isArray(parsedData)) {
+        throw new Error("Product data must be a JSON array of products.");
+      }
+
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+      };
+
+      const res = await axios.post("/api/products/bulk", parsedData, config);
+      triggerAlert("success", res.data?.message || "Products imported successfully");
+      setBulkModalOpen(false);
+      setBulkJson("");
+      setBulkFile(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      triggerAlert("error", err.response?.data?.message || err.message || "Failed to import products");
+    } finally {
+      setBulkImporting(false);
+    }
+  };
+
   // Filtered lists
   const filteredProducts = products.filter((prod) => {
     const matchesSearch =
@@ -244,13 +288,25 @@ export default function AdminProductsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenModal("create")}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer self-start sm:self-auto"
-        >
-          <span className="material-symbols-outlined text-base">add</span>
-          Add Product
-        </button>
+        <div className="flex gap-2.5 self-start sm:self-auto">
+          {user?.role === "SUPER_ADMIN" && (
+            <button
+              onClick={() => setBulkModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant/60 hover:bg-surface-container-low text-on-surface-variant rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">publish</span>
+              Bulk Upload
+            </button>
+          )}
+
+          <button
+            onClick={() => handleOpenModal("create")}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">add</span>
+            Add Product
+          </button>
+        </div>
       </div>
 
       {/* Filters Area */}
@@ -335,7 +391,7 @@ export default function AdminProductsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container-low shrink-0 border border-outline-variant/25">
                           <img
-                            src={prod.thumbnail_url || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=200"}
+                            src={prod.thumbnail_url || (prod.images && prod.images[0]?.image_url) || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=200"}
                             alt={prod.name}
                             className="w-full h-full object-cover"
                           />
@@ -616,6 +672,113 @@ export default function AdminProductsPage() {
                   className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? "Submitting..." : modalMode === "create" ? "Add Product" : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {bulkModalOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white border border-outline-variant/30 rounded-2xl w-full max-w-lg shadow-xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-5 border-b border-outline-variant/20 flex items-center justify-between">
+              <h3 className="text-sm sm:text-base font-headline font-bold text-on-surface">
+                Bulk Import Products
+              </h3>
+              <button
+                onClick={() => {
+                  setBulkModalOpen(false);
+                  setBulkFile(null);
+                  setBulkJson("");
+                }}
+                className="text-on-surface-variant hover:text-on-surface p-1 hover:bg-surface-container-low rounded-md"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleBulkUpload} className="p-6 flex flex-col gap-4 overflow-y-auto">
+              <p className="text-[10px] text-on-surface-variant font-light leading-normal">
+                Import multiple products at once. You can upload a <b>JSON</b> file or paste a JSON array directly.
+              </p>
+
+              {/* File Upload Zone */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-on-surface">Upload JSON File</label>
+                <div className="relative border-2 border-dashed border-outline-variant/40 hover:border-primary/45 rounded-xl p-6 text-center cursor-pointer transition-colors bg-[#FAF6F0]/10 hover:bg-[#FAF6F0]/25">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <span className="material-symbols-outlined text-3xl text-primary/70 mb-1.5">
+                    upload_file
+                  </span>
+                  <p className="text-xs text-on-surface font-semibold">
+                    {bulkFile ? bulkFile.name : "Select or Drop JSON file"}
+                  </p>
+                  <p className="text-[10px] text-on-surface-variant font-light mt-0.5">
+                    {bulkFile ? `${(bulkFile.size / 1024).toFixed(2)} KB` : "Supports standard .json formatted lists"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-outline-variant/15"></div>
+                <span className="flex-shrink mx-3 text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider">Or Paste JSON Array</span>
+                <div className="flex-grow border-t border-outline-variant/15"></div>
+              </div>
+
+              {/* Paste Textarea */}
+              <div className="flex flex-col gap-1.5">
+                <textarea
+                  rows="6"
+                  value={bulkJson}
+                  onChange={(e) => {
+                    setBulkJson(e.target.value);
+                    if (e.target.value) setBulkFile(null); // Clear file if text is entered
+                  }}
+                  disabled={!!bulkFile}
+                  placeholder='[
+  {
+    "name": "Organic Honey Tonic",
+    "sku": "HON-001",
+    "price": 499.00,
+    "gst": 18,
+    "quantity": 100,
+    "category_id": "20",
+    "short_description": "Natural tonic...",
+    "thumbnail_url": "https://images.unsplash.com/photo-..."
+  }
+]'
+                  className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-[10px] bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 resize-y font-mono disabled:opacity-50"
+                />
+              </div>
+
+              {/* Footer Actions */}
+              <div className="border-t border-outline-variant/20 pt-4 mt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkModalOpen(false);
+                    setBulkFile(null);
+                    setBulkJson("");
+                  }}
+                  className="px-4 py-2 border border-outline-variant/45 rounded-xl text-xs font-bold text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkImporting}
+                  className="px-5 py-2 bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {bulkImporting ? "Importing..." : "Start Import"}
                 </button>
               </div>
             </form>

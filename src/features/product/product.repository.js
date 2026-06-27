@@ -103,6 +103,18 @@ export const createProduct = async (productData) => {
     images = [],
   } = productData;
 
+  // Align images list and thumbnail_url
+  let finalImages = [...images];
+  if (finalImages.length === 0 && thumbnail_url) {
+    finalImages.push(thumbnail_url);
+  }
+
+  let finalThumbnailUrl = thumbnail_url;
+  if (!finalThumbnailUrl && finalImages.length > 0) {
+    const firstImg = finalImages[0];
+    finalThumbnailUrl = firstImg.image_url || firstImg;
+  }
+
   return prisma.product.create({
     data: {
       category_id: BigInt(category_id),
@@ -114,10 +126,10 @@ export const createProduct = async (productData) => {
       gst: gst !== undefined ? gst : 0,
       quantity: parseInt(quantity, 10),
       sku,
-      thumbnail_url,
+      thumbnail_url: finalThumbnailUrl || "",
       is_active: is_active !== undefined ? is_active : true,
       images: {
-        create: images.map((img, idx) => ({
+        create: finalImages.map((img, idx) => ({
           image_url: img.image_url || img,
           display_order: img.display_order !== undefined ? img.display_order : idx,
         })),
@@ -163,21 +175,48 @@ export const updateProduct = async (id, updateData) => {
   if (gst !== undefined) data.gst = gst;
   if (quantity !== undefined) data.quantity = parseInt(quantity, 10);
   if (sku !== undefined) data.sku = sku;
-  if (thumbnail_url !== undefined) data.thumbnail_url = thumbnail_url;
   if (is_active !== undefined) data.is_active = is_active;
 
-  // For simplicity, if new images are provided, delete previous images first and create new ones
-  if (images !== undefined) {
+  // Let's synchronize thumbnail_url and images
+  let finalThumbnailUrl = thumbnail_url;
+  let finalImages = images;
+
+  if (finalImages !== undefined || finalThumbnailUrl !== undefined) {
+    if (finalImages === undefined) {
+      const currentProduct = await prisma.product.findUnique({
+        where: { id: BigInt(id) },
+        include: { images: true }
+      });
+      finalImages = currentProduct?.images.map(img => img.image_url) || [];
+    }
+
+    if (finalThumbnailUrl === undefined) {
+      const currentProduct = await prisma.product.findUnique({
+        where: { id: BigInt(id) }
+      });
+      finalThumbnailUrl = currentProduct?.thumbnail_url || "";
+    }
+
+    // Now check sync
+    if (finalImages.length === 0 && finalThumbnailUrl) {
+      finalImages = [finalThumbnailUrl];
+    } else if (finalImages.length > 0 && !finalThumbnailUrl) {
+      const firstImg = finalImages[0];
+      finalThumbnailUrl = firstImg.image_url || firstImg;
+    }
+
     await prisma.productImage.deleteMany({
       where: { product_id: BigInt(id) },
     });
 
     data.images = {
-      create: images.map((img, idx) => ({
+      create: finalImages.map((img, idx) => ({
         image_url: img.image_url || img,
         display_order: img.display_order !== undefined ? img.display_order : idx,
       })),
     };
+
+    data.thumbnail_url = finalThumbnailUrl;
   }
 
   return prisma.product.update({
@@ -243,6 +282,18 @@ export const bulkCreateProducts = async (products) => {
         throw new Error(`Product with SKU "${prod.sku}" already exists`);
       }
 
+      // Let's align images list and thumbnail_url
+      let finalImages = prod.images ? [...prod.images] : [];
+      if (finalImages.length === 0 && prod.thumbnail_url) {
+        finalImages.push(prod.thumbnail_url);
+      }
+
+      let finalThumbnailUrl = prod.thumbnail_url;
+      if (!finalThumbnailUrl && finalImages.length > 0) {
+        const firstImg = finalImages[0];
+        finalThumbnailUrl = firstImg.image_url || firstImg;
+      }
+
       // 4. Create Product
       const newProduct = await tx.product.create({
         data: {
@@ -255,10 +306,10 @@ export const bulkCreateProducts = async (products) => {
           gst: prod.gst,
           quantity: prod.quantity,
           sku: prod.sku,
-          thumbnail_url: prod.thumbnail_url,
+          thumbnail_url: finalThumbnailUrl || "",
           is_active: prod.is_active,
           images: {
-            create: prod.images.map((img, idx) => ({
+            create: finalImages.map((img, idx) => ({
               image_url: img.image_url || img,
               display_order: img.display_order !== undefined ? img.display_order : idx,
             })),
