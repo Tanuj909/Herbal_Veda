@@ -94,7 +94,7 @@ export default function FeaturedProducts() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 sm:mb-16 gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-[#242926]">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0D5C2F]">
               Featured Products
             </h2>
             <p className="text-xs sm:text-sm text-[#6B7A75] mt-1 sm:mt-2">

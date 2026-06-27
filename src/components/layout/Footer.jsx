@@ -11,13 +11,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6 items-start justify-between">
           {/* Column 1: Brand Info */}
           <div className="flex flex-col gap-3 max-w-sm">
-            <Link href="/" className="flex items-center gap-2.5 text-primary-fixed-dim">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <img
-                src="/logo/logo.jpeg"
+                src="/logo/logo.png"
                 alt="The Herbal Veda Logo"
-                className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full border border-white/10"
+                className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full border border-[#E8EDEA] bg-white"
               />
-              <span className="font-headline text-2xl font-bold tracking-tight text-[#138D45]">
+              <span className="font-headline text-base sm:text-lg lg:text-xl font-bold tracking-tight text-[#138D45] whitespace-nowrap">
                 The Herbal <span className="text-[#6FB74B]">Veda</span>
               </span>
             </Link>

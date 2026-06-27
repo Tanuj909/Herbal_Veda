@@ -121,6 +121,53 @@ function StatusBadge({ status }) {
   );
 }
 
+// ─── Payment Status Configuration ──────────────────────────────────────────
+const PAYMENT_STATUS_CONFIG = {
+  PENDING: {
+    color: "amber",
+    label: "Pending",
+  },
+  SUCCESS: {
+    color: "emerald",
+    label: "Success",
+  },
+  FAILED: {
+    color: "rose",
+    label: "Failed",
+  },
+  REFUNDED: {
+    color: "blue",
+    label: "Refunded",
+  },
+};
+
+function PaymentStatusBadge({ status }) {
+  const config = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.PENDING;
+  const colorMap = {
+    amber: "bg-amber-50 text-amber-700 border-amber-200",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    rose: "bg-rose-50 text-rose-700 border-rose-200",
+    blue: "bg-blue-50 text-blue-700 border-blue-200",
+  };
+  const dotMap = {
+    amber: "bg-amber-500",
+    emerald: "bg-emerald-500",
+    rose: "bg-rose-500",
+    blue: "bg-blue-500",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] sm:text-[11px] font-medium rounded-full border ${colorMap[config.color]}`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotMap[config.color]}`}
+      />
+      {config.label}
+    </span>
+  );
+}
+
 // ─── Order Step Tracker ──────────────────────────────────────────────────────
 const TRACKER_STEPS = [
   { id: "ordered",    label: "Ordered",    icon: ShoppingBag },
@@ -395,6 +442,16 @@ export default function OrdersPage() {
                           label="Placed On"
                           value={formatDate(order.created_at)}
                         />
+                        <InfoChip
+                          label="Payment Mode"
+                          value={order.payment_method || "COD"}
+                        />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[9px] sm:text-[10px] font-medium text-[#9BA8A2] uppercase tracking-wider">
+                            Payment Status
+                          </span>
+                          <PaymentStatusBadge status={order.payment_status} />
+                        </div>
                       </div>
 
                       {/* Right: amount + chevron */}
@@ -549,6 +606,16 @@ export default function OrdersPage() {
                               <span className="text-xs font-medium text-[#242926]">
                                 {formatPrice(order.gst)}
                               </span>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 mt-0.5 border-t border-[#E2E8E4]">
+                              <span className="text-xs text-[#6B7A75]">Payment Method</span>
+                              <span className="text-xs font-medium text-[#242926]">
+                                {order.payment_method || "COD"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-[#6B7A75]">Payment Status</span>
+                              <PaymentStatusBadge status={order.payment_status} />
                             </div>
                             <div className="flex justify-between items-center pt-2.5 mt-0.5 border-t border-[#E2E8E4]">
                               <span className="text-sm font-semibold text-[#242926]">Total Paid</span>

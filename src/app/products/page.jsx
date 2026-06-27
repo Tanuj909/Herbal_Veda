@@ -22,6 +22,7 @@ function ProductsContent() {
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Sync category filter with query parameter from URL
   useEffect(() => {
@@ -148,20 +149,92 @@ function ProductsContent() {
               {loadingCategories ? (
                 <div className="h-6 bg-[#F5F8F6] w-32 rounded-full animate-pulse"></div>
               ) : (
-                categories.map((cat) => (
-                  <button
-                    key={cat.id.toString()}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat.id.toString())}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                      selectedCategory === cat.id.toString()
-                        ? "bg-[#2C3E37] text-white shadow-xs"
-                        : "bg-[#F5F8F6] text-[#6B7A75] hover:bg-[#E8EDEA] hover:text-[#2C3E37]"
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))
+                <>
+                  {categories.slice(0, 5).map((cat) => (
+                    <button
+                      key={cat.id.toString()}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat.id.toString())}
+                      className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                        selectedCategory === cat.id.toString()
+                          ? "bg-[#2C3E37] text-white shadow-xs"
+                          : "bg-[#F5F8F6] text-[#6B7A75] hover:bg-[#E8EDEA] hover:text-[#2C3E37]"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                  
+                  {/* If selected category is outside the first 5, show it in the main view too! */}
+                  {selectedCategory !== "" && !categories.slice(0, 5).some(c => c.id.toString() === selectedCategory) && (
+                    (() => {
+                      const selectedCat = categories.find(c => c.id.toString() === selectedCategory);
+                      return selectedCat ? (
+                        <button
+                          key={selectedCat.id.toString()}
+                          type="button"
+                          onClick={() => setSelectedCategory(selectedCat.id.toString())}
+                          className="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer bg-[#2C3E37] text-white shadow-xs"
+                        >
+                          {selectedCat.name}
+                        </button>
+                      ) : null;
+                    })()
+                  )}
+
+                  {categories.length > 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCategories(true)}
+                      className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#2C3E37]/10 text-[#2C3E37] hover:bg-[#2C3E37]/20 transition-all cursor-pointer"
+                    >
+                      More +
+                    </button>
+                  )}
+
+                  {/* Micro-Modal for More Categories */}
+                  {showAllCategories && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 bg-black/20 z-40 backdrop-blur-xs transition-opacity duration-300"
+                        onClick={() => setShowAllCategories(false)}
+                      />
+                      {/* Modal Dialog */}
+                      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-2xl p-5 border border-[#E8EDEA] shadow-xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-sm font-semibold text-[#2C3E37]">More Categories</h3>
+                          <button
+                            type="button"
+                            onClick={() => setShowAllCategories(false)}
+                            className="text-[#6B7A75] hover:text-[#2C3E37] text-xs font-semibold p-1 cursor-pointer"
+                          >
+                            Close
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto py-1">
+                          {categories.slice(5).map((cat) => (
+                            <button
+                              key={cat.id.toString()}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(cat.id.toString());
+                                setShowAllCategories(false);
+                              }}
+                              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                                selectedCategory === cat.id.toString()
+                                  ? "bg-[#2C3E37] text-white shadow-xs"
+                                  : "bg-[#F5F8F6] text-[#6B7A75] hover:bg-[#E8EDEA] hover:text-[#2C3E37]"
+                              }`}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>

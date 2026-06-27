@@ -64,7 +64,7 @@ export default function CategoriesSection() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-3 sm:gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-light text-[#242926]">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0D5C2F]">
               Shop by Categories
             </h2>
             <p className="text-[10px] sm:text-xs text-[#6B7A75] mt-0.5 sm:mt-1">
