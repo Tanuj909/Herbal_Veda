@@ -52,15 +52,40 @@ export async function GET(req) {
  */
 export const POST = withAuth(["ADMIN", "SUPER_ADMIN"])(async (req) => {
   try {
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    let categoryData = {};
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      
+      categoryData = {
+        name: formData.get("name")?.toString() || "",
+        slug: formData.get("slug")?.toString() || "",
+        description: formData.get("description")?.toString() || "",
+        is_active: formData.has("is_active") ? formData.get("is_active") === "true" : true,
+        parent_id: formData.get("parent_id")?.toString() || null,
+      };
+
+      const imageFile = formData.get("image");
+      if (imageFile && typeof imageFile !== "string") {
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mimeType = imageFile.type || "image/jpeg";
+        categoryData.image_url = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      } else if (imageFile) {
+        categoryData.image_url = imageFile.toString();
+      }
+    } else {
+      categoryData = await req.json();
+    }
 
     // Validate Input
-    const { isValid, errors } = validateCreateCategory(body);
+    const { isValid, errors } = validateCreateCategory(categoryData);
     if (!isValid) {
       return errorResponse("Validation failed", 400, errors);
     }
 
-    const newCategory = await categoryService.createCategory(body);
+    const newCategory = await categoryService.createCategory(categoryData);
 
     return successResponse(newCategory, "Category created successfully", 201);
   } catch (error) {

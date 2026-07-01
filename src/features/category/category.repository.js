@@ -1,4 +1,48 @@
 import prisma from "@/lib/prisma";
+import { getBufferFromUrlOrBase64 } from "../product/product.repository";
+
+/**
+ * Maps a database category model (with BLOB image column) to the expected API response format.
+ * Converts image buffer to a base64 Data URL.
+ * @param {Object} cat
+ * @returns {Object|null}
+ */
+export const mapCategoryFromDb = (cat) => {
+  if (!cat) return null;
+  const mapped = { ...cat };
+
+  if (mapped.image) {
+    const mime = mapped.image_mime || "image/jpeg";
+    mapped.image_url = `data:${mime};base64,${Buffer.from(mapped.image).toString("base64")}`;
+  } else {
+    mapped.image_url = null;
+  }
+
+  delete mapped.image;
+  delete mapped.image_mime;
+
+  if (mapped.parent) {
+    mapped.parent = mapCategoryFromDb(mapped.parent);
+  }
+  if (mapped.children) {
+    mapped.children = mapped.children.map(mapCategoryFromDb);
+  }
+
+  return mapped;
+};
+
+/**
+ * Maps multiple database categories.
+ * @param {Array} categories
+ * @returns {Array}
+ */
+export const mapCategoriesFromDb = (categories) => {
+  if (!categories) return categories;
+  if (Array.isArray(categories)) {
+    return categories.map(mapCategoryFromDb);
+  }
+  return mapCategoryFromDb(categories);
+};
 
 /**
  * Find a category by its unique ID.
@@ -6,13 +50,14 @@ import prisma from "@/lib/prisma";
  * @returns {Promise<Object|null>}
  */
 export const findCategoryById = async (id) => {
-  return prisma.category.findUnique({
+  const cat = await prisma.category.findUnique({
     where: { id: BigInt(id) },
     include: {
       parent: true,
       children: true,
     },
   });
+  return mapCategoryFromDb(cat);
 };
 
 /**
@@ -21,13 +66,14 @@ export const findCategoryById = async (id) => {
  * @returns {Promise<Object|null>}
  */
 export const findCategoryBySlug = async (slug) => {
-  return prisma.category.findUnique({
+  const cat = await prisma.category.findUnique({
     where: { slug },
     include: {
       parent: true,
       children: true,
     },
   });
+  return mapCategoryFromDb(cat);
 };
 
 /**
@@ -43,31 +89,31 @@ export const findAllCategories = async (filters = {}) => {
     where.is_active = filters.is_active;
   }
 
-  return prisma.category.findMany({
+  const categories = await prisma.category.findMany({
     where,
     orderBy: {
       name: "asc",
     },
   });
+  return mapCategoriesFromDb(categories);
 };
 
 /**
  * Create a new category.
  * @param {Object} categoryData
- * @param {string} categoryData.name
- * @param {string} categoryData.slug
- * @param {string|number|BigInt|null} [categoryData.parent_id]
- * @param {boolean} [categoryData.is_active]
  * @returns {Promise<Object>}
  */
 export const createCategory = async (categoryData) => {
   const { name, slug, parent_id, is_active, description, image_url } = categoryData;
   
+  const thumbResult = await getBufferFromUrlOrBase64(image_url);
+
   const data = {
     name,
     slug,
     description: description || null,
-    image_url: image_url || null,
+    image: thumbResult ? thumbResult.buffer : null,
+    image_mime: thumbResult ? thumbResult.mimeType : null,
     is_active: is_active !== undefined ? is_active : true,
   };
 
@@ -75,9 +121,10 @@ export const createCategory = async (categoryData) => {
     data.parent_id = BigInt(parent_id);
   }
 
-  return prisma.category.create({
+  const category = await prisma.category.create({
     data,
   });
+  return mapCategoryFromDb(category);
 };
 
 /**
@@ -92,17 +139,28 @@ export const updateCategory = async (id, updateData) => {
   if (updateData.name !== undefined) data.name = updateData.name;
   if (updateData.slug !== undefined) data.slug = updateData.slug;
   if (updateData.description !== undefined) data.description = updateData.description;
-  if (updateData.image_url !== undefined) data.image_url = updateData.image_url;
   if (updateData.is_active !== undefined) data.is_active = updateData.is_active;
 
   if (updateData.parent_id !== undefined) {
     data.parent_id = updateData.parent_id ? BigInt(updateData.parent_id) : null;
   }
 
-  return prisma.category.update({
+  if (updateData.image_url !== undefined) {
+    const thumbResult = await getBufferFromUrlOrBase64(updateData.image_url);
+    if (thumbResult) {
+      data.image = thumbResult.buffer;
+      data.image_mime = thumbResult.mimeType;
+    } else if (updateData.image_url === "" || updateData.image_url === null) {
+      data.image = null;
+      data.image_mime = null;
+    }
+  }
+
+  const category = await prisma.category.update({
     where: { id: BigInt(id) },
     data,
   });
+  return mapCategoryFromDb(category);
 };
 
 /**
@@ -170,17 +228,20 @@ export const bulkCreateCategories = async (categories) => {
         throw new Error(`Category with slug "${cat.slug}" already exists`);
       }
 
+      const thumbResult = await getBufferFromUrlOrBase64(cat.image_url);
+
       const created = await tx.category.create({
         data: {
           name: cat.name,
           slug: cat.slug,
           description: cat.description || null,
-          image_url: cat.image_url || null,
+          image: thumbResult ? thumbResult.buffer : null,
+          image_mime: thumbResult ? thumbResult.mimeType : null,
           parent_id: parent_id_bigint,
           is_active: cat.is_active,
         }
       });
-      results.push(created);
+      results.push(mapCategoryFromDb(created));
     }
     return results;
   });

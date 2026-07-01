@@ -26,6 +26,7 @@ export default function AdminCategoriesPage() {
   const [isActive, setIsActive] = useState(true);
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
 
   // Alert State
   const [alert, setAlert] = useState(null);
@@ -81,6 +82,7 @@ export default function AdminCategoriesPage() {
       setDescription("");
       setImageUrl("");
     }
+    setImageFile(null);
     setModalOpen(false);
     setTimeout(() => setModalOpen(true), 50);
   };
@@ -136,22 +138,31 @@ export default function AdminCategoriesPage() {
 
     setSubmitting(true);
 
-    const formattedSlug = slug.trim()
-      ? slug.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w\-]+/g, "").replace(/\-\-+/g, "-")
-      : undefined;
+    const payload = new FormData();
+    payload.append("name", name);
+    if (slug.trim()) {
+      const formattedSlug = slug.trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w\-]+/g, "")
+        .replace(/\-\-+/g, "-");
+      payload.append("slug", formattedSlug);
+    }
+    payload.append("is_active", isActive.toString());
+    payload.append("description", description.trim() || "");
 
-    const payload = {
-      name,
-      slug: formattedSlug,
-      parent_id: null,
-      is_active: isActive,
-      description: description.trim() || null,
-      image_url: imageUrl.trim() || null,
-    };
+    if (imageFile) {
+      payload.append("image", imageFile);
+    } else if (imageUrl) {
+      payload.append("image", imageUrl);
+    }
 
     try {
       const config = {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       };
 
       if (modalMode === "create") {
@@ -392,16 +403,46 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
-              {/* Category Image URL */}
+              {/* Category Image Upload */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-on-surface">Category Image URL</label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="e.g. https://images.unsplash.com/photo-..."
-                  className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
-                />
+                <label className="text-xs font-semibold text-on-surface">Category Image</label>
+                <div className="flex gap-4 items-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setImageFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImageUrl(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="px-3 py-1.5 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50 flex-grow"
+                  />
+                  {imageUrl && (
+                    <div className="relative w-12 h-12 rounded-lg border border-outline-variant/30 overflow-hidden flex-shrink-0 bg-stone-100">
+                      <img
+                        src={imageUrl}
+                        alt="Category Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImageUrl("");
+                        }}
+                        className="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold p-0.5 rounded-full leading-none w-4 h-4 flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Description */}

@@ -75,7 +75,8 @@ model Category {
   name        String   @db.VarChar(100)
   slug        String   @unique @db.VarChar(150)
   description String?  @db.Text
-  image_url   String?  @db.VarChar(255)
+  image       Bytes?   @db.LongBlob
+  image_mime  String?  @db.VarChar(100)
   parent_id   BigInt?
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
@@ -99,7 +100,8 @@ model Product {
   gst               Decimal  @default(0.00) @db.Decimal(5, 2)
   quantity          Int
   sku               String   @unique @db.VarChar(100)
-  thumbnail_url     String?  @db.VarChar(500)
+  thumbnail         Bytes?   @db.LongBlob
+  thumbnail_mime    String?  @db.VarChar(100)
   is_active         Boolean  @default(true)
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
@@ -116,7 +118,8 @@ model Product {
 model ProductImage {
   id            BigInt   @id @default(autoincrement())
   product_id    BigInt
-  image_url     String   @db.VarChar(500)
+  image         Bytes    @db.LongBlob
+  image_mime    String?  @db.VarChar(100)
   display_order Int
   created_at    DateTime @default(now())
 

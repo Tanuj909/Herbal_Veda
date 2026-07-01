@@ -306,7 +306,7 @@ export const bulkCreateCategories = async (categoriesArray) => {
       name,
       slug,
       description: item.description || null,
-      image_url: item.image_url || null,
+      image_url: item.image || item.image_url || null,
       parent_id: item.parent_id || null,
       is_active: item.is_active !== undefined ? item.is_active : true,
     });

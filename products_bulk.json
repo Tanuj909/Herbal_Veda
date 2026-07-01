@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Organic Tulsi Tea",
+    "sku": "TULSI-100",
+    "price": 15.00,
+    "gst": 5.0,
+    "quantity": 100,
+    "category_id": 1,
+    "short_description": "Immunity booster Tulsi infusion",
+    "thumbnail": "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&q=80&w=300",
+    "is_active": true
+  },
+  {
+    "name": "Pure Lavender Oil",
+    "sku": "LAV-050",
+    "price": 25.50,
+    "gst": 18.0,
+    "quantity": 50,
+    "category_id": 1,
+    "short_description": "Calming pure essential oil",
+    "thumbnail": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=300",
+    "is_active": true
+  }
+]

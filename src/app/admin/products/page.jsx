@@ -38,6 +38,7 @@ export default function AdminProductsPage() {
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
 
   // Alert State
@@ -87,6 +88,7 @@ export default function AdminProductsPage() {
   const handleOpenModal = (mode, product = null) => {
     setFormErrors({});
     setModalMode(mode);
+    setThumbnailFile(null);
     if (mode === "edit" && product) {
       setEditingId(product.id.toString());
       setName(product.name);
@@ -110,7 +112,7 @@ export default function AdminProductsPage() {
       setCategoryId(categories[0]?.id?.toString() || "");
       setShortDescription("");
       setDescription("");
-      setThumbnailUrl("https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600");
+      setThumbnailUrl("");
       setIsActive(true);
     }
     setModalOpen(true);
@@ -173,18 +175,22 @@ export default function AdminProductsPage() {
 
     setSubmitting(true);
 
-    const payload = {
-      name,
-      sku,
-      price: parseFloat(price),
-      gst: parseFloat(gst),
-      quantity: parseInt(quantity, 10),
-      category_id: categoryId,
-      short_description: shortDescription,
-      description,
-      thumbnail_url: thumbnailUrl,
-      is_active: isActive,
-    };
+    const payload = new FormData();
+    payload.append("name", name);
+    payload.append("sku", sku);
+    payload.append("price", price);
+    payload.append("gst", gst);
+    payload.append("quantity", quantity);
+    payload.append("category_id", categoryId);
+    payload.append("short_description", shortDescription);
+    payload.append("description", description);
+    payload.append("is_active", isActive.toString());
+    
+    if (thumbnailFile) {
+      payload.append("thumbnail", thumbnailFile);
+    } else if (thumbnailUrl) {
+      payload.append("thumbnail", thumbnailUrl);
+    }
 
     try {
       const config = {
@@ -487,7 +493,7 @@ export default function AdminProductsPage() {
             {/* Modal Header */}
             <div className="p-5 border-b border-outline-variant/20 flex items-center justify-between">
               <h3 className="text-base font-headline font-bold text-on-surface">
-                {modalMode === "create" ? "Add New Botanical Product" : "Edit Product Details"}
+                {modalMode === "create" ? "Add New Product" : "Edit Product Details"}
               </h3>
               <button
                 onClick={() => setModalOpen(false)}
@@ -595,16 +601,34 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Thumbnail URL */}
+              {/* Thumbnail Image */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-on-surface">Thumbnail Image URL</label>
-                <input
-                  type="url"
-                  value={thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
-                  placeholder="Thumbnail Image URL"
-                  className="px-3.5 py-2 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
-                />
+                <label className="text-xs font-semibold text-on-surface">Thumbnail Image</label>
+                <div className="flex items-center gap-3">
+                  {thumbnailUrl && (
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail Preview"
+                      className="w-12 h-12 object-cover rounded-lg border border-outline-variant/30 bg-[#FAF6F0]"
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setThumbnailFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setThumbnailUrl(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="flex-1 px-3.5 py-1.5 border border-outline-variant/40 rounded-xl text-xs bg-[#FAF6F0]/20 focus:bg-white focus:outline-none focus:border-primary/50"
+                  />
+                </div>
               </div>
 
               {/* Short Description */}

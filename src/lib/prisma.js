@@ -16,6 +16,7 @@ const initPrisma = () => {
     password: decodeURIComponent(dbUrl.password || ""),
     database: dbUrl.pathname.substring(1),
     connectionLimit: process.env.NODE_ENV === "production" ? 10 : 5,
+    ssl: true,
   });
   return new PrismaClient({ adapter });
 };

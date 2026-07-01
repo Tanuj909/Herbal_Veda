@@ -35,9 +35,7 @@ export const validateCreateCategory = (data) => {
   // Validate Image URL if provided
   if (image_url !== undefined && image_url !== null && image_url !== "") {
     if (typeof image_url !== "string") {
-      errors.image_url = "Image URL must be a string";
-    } else if (image_url.length > 255) {
-      errors.image_url = "Image URL cannot exceed 255 characters";
+      errors.image_url = "Image must be a valid image data string";
     }
   }
 
@@ -101,9 +99,7 @@ export const validateUpdateCategory = (data) => {
   // Validate Image URL if provided
   if (image_url !== undefined && image_url !== null) {
     if (typeof image_url !== "string") {
-      errors.image_url = "Image URL must be a string";
-    } else if (image_url.length > 255) {
-      errors.image_url = "Image URL cannot exceed 255 characters";
+      errors.image_url = "Image must be a valid image data string";
     }
   }
 

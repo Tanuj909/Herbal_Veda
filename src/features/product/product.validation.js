@@ -82,8 +82,8 @@ export const validateCreateProduct = (data) => {
 
   // Validate Thumbnail URL if provided
   if (thumbnail_url !== undefined && thumbnail_url !== null && thumbnail_url !== "") {
-    if (typeof thumbnail_url !== "string" || thumbnail_url.length > 500) {
-      errors.thumbnail_url = "Thumbnail URL cannot exceed 500 characters";
+    if (typeof thumbnail_url !== "string") {
+      errors.thumbnail_url = "Thumbnail must be a valid image data string";
     }
   }
 
@@ -182,8 +182,8 @@ export const validateUpdateProduct = (data) => {
 
   // Validate Thumbnail URL if provided
   if (thumbnail_url !== undefined && thumbnail_url !== null && thumbnail_url !== "") {
-    if (typeof thumbnail_url !== "string" || thumbnail_url.length > 500) {
-      errors.thumbnail_url = "Thumbnail URL cannot exceed 500 characters";
+    if (typeof thumbnail_url !== "string") {
+      errors.thumbnail_url = "Thumbnail must be a valid image data string";
     }
   }
 

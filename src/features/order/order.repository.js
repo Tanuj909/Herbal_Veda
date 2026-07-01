@@ -1,6 +1,57 @@
 import prisma from "@/lib/prisma";
 
 /**
+ * Maps a nested product inside an order item to convert binary thumbnail to a base64 Data URL.
+ * @param {Object} prod
+ * @returns {Object|null}
+ */
+const mapOrderProduct = (prod) => {
+  if (!prod) return prod;
+  const mapped = { ...prod };
+  if (mapped.thumbnail) {
+    const mime = mapped.thumbnail_mime || "image/jpeg";
+    mapped.thumbnail_url = `data:${mime};base64,${Buffer.from(mapped.thumbnail).toString("base64")}`;
+  } else {
+    mapped.thumbnail_url = null;
+  }
+  delete mapped.thumbnail;
+  delete mapped.thumbnail_mime;
+  return mapped;
+};
+
+/**
+ * Maps a single order to convert all nested order item products.
+ * @param {Object} order
+ * @returns {Object|null}
+ */
+const mapOrder = (order) => {
+  if (!order) return order;
+  const mapped = { ...order };
+  if (mapped.items) {
+    mapped.items = mapped.items.map((item) => {
+      if (item.product) {
+        return {
+          ...item,
+          product: mapOrderProduct(item.product),
+        };
+      }
+      return item;
+    });
+  }
+  return mapped;
+};
+
+/**
+ * Maps multiple orders.
+ * @param {Array} orders
+ * @returns {Array}
+ */
+const mapOrders = (orders) => {
+  if (!orders) return orders;
+  return orders.map(mapOrder);
+};
+
+/**
  * Find all orders with optional filters.
  * @param {Object} [filters]
  * @param {string} [filters.status] - Filter by order status
@@ -18,7 +69,7 @@ export const findAllOrders = async (filters = {}) => {
     where.user_id = BigInt(filters.user_id);
   }
 
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where,
     include: {
       user: {
@@ -36,7 +87,8 @@ export const findAllOrders = async (filters = {}) => {
             select: {
               name: true,
               sku: true,
-              thumbnail_url: true,
+              thumbnail: true,
+              thumbnail_mime: true,
             },
           },
         },
@@ -51,6 +103,8 @@ export const findAllOrders = async (filters = {}) => {
       created_at: "desc",
     },
   });
+
+  return mapOrders(orders);
 };
 
 /**
@@ -59,7 +113,7 @@ export const findAllOrders = async (filters = {}) => {
  * @returns {Promise<Object|null>}
  */
 export const findOrderById = async (id) => {
-  return prisma.order.findUnique({
+  const order = await prisma.order.findUnique({
     where: { id: BigInt(id) },
     include: {
       user: {
@@ -77,7 +131,8 @@ export const findOrderById = async (id) => {
             select: {
               name: true,
               sku: true,
-              thumbnail_url: true,
+              thumbnail: true,
+              thumbnail_mime: true,
             },
           },
         },
@@ -94,6 +149,8 @@ export const findOrderById = async (id) => {
       },
     },
   });
+
+  return mapOrder(order);
 };
 
 /**
@@ -137,17 +194,17 @@ export const createOrder = async (orderData) => {
     items,
   } = orderData;
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // 1. Update product quantities and verify stock
     for (const item of items) {
       const product = await tx.product.findUnique({
-        where: { id: BigInt(item.product_id) }
+        where: { id: BigInt(item.product_id) },
       });
-      
+
       if (!product) {
         throw new Error(`Product with ID ${item.product_id} not found`);
       }
-      
+
       if (product.quantity < item.quantity) {
         throw new Error(`Insufficient stock for product: ${product.name}`);
       }
@@ -156,9 +213,9 @@ export const createOrder = async (orderData) => {
         where: { id: BigInt(item.product_id) },
         data: {
           quantity: {
-            decrement: item.quantity
-          }
-        }
+            decrement: item.quantity,
+          },
+        },
       });
     }
 
@@ -181,8 +238,8 @@ export const createOrder = async (orderData) => {
             product_name: item.product_name,
             product_price: parseFloat(item.product_price),
             quantity: item.quantity,
-            total_price: parseFloat(item.total_price)
-          }))
+            total_price: parseFloat(item.total_price),
+          })),
         },
         payments: {
           create: {
@@ -196,9 +253,9 @@ export const createOrder = async (orderData) => {
           create: {
             status: "PENDING",
             remarks: "Order created successfully",
-            created_by: BigInt(user_id)
-          }
-        }
+            created_by: BigInt(user_id),
+          },
+        },
       },
       include: {
         items: {
@@ -207,10 +264,11 @@ export const createOrder = async (orderData) => {
               select: {
                 name: true,
                 sku: true,
-                thumbnail_url: true,
-              }
-            }
-          }
+                thumbnail: true,
+                thumbnail_mime: true,
+              },
+            },
+          },
         },
         address: true,
         user: {
@@ -219,11 +277,13 @@ export const createOrder = async (orderData) => {
             name: true,
             email: true,
             phone: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
   });
+
+  return mapOrder(result);
 };
 
 /**
@@ -272,3 +332,4 @@ export const sumRevenue = async () => {
   });
   return aggregate._sum.total_amount ? Number(aggregate._sum.total_amount) : 0;
 };
+

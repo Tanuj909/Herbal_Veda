@@ -53,15 +53,62 @@ export async function GET(req) {
  */
 export const POST = withAuth(["ADMIN", "SUPER_ADMIN"])(async (req) => {
   try {
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    let productData = {};
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      
+      productData = {
+        name: formData.get("name")?.toString() || "",
+        sku: formData.get("sku")?.toString() || "",
+        price: formData.get("price") ? parseFloat(formData.get("price").toString()) : undefined,
+        gst: formData.get("gst") ? parseFloat(formData.get("gst").toString()) : undefined,
+        quantity: formData.get("quantity") ? parseInt(formData.get("quantity").toString(), 10) : undefined,
+        category_id: formData.get("category_id") ? formData.get("category_id").toString() : "",
+        short_description: formData.get("short_description")?.toString() || "",
+        description: formData.get("description")?.toString() || "",
+        is_active: formData.get("is_active") === "true",
+      };
+
+      // Extract raw image file from "thumbnail"
+      const thumbnailFile = formData.get("thumbnail");
+      if (thumbnailFile && typeof thumbnailFile !== "string") {
+        const arrayBuffer = await thumbnailFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mimeType = thumbnailFile.type || "image/jpeg";
+        productData.thumbnail_url = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      } else if (thumbnailFile) {
+        productData.thumbnail_url = thumbnailFile.toString();
+      }
+
+      // Extract other images (if any)
+      const imagesFiles = formData.getAll("images");
+      if (imagesFiles.length > 0) {
+        const imagesList = [];
+        for (const file of imagesFiles) {
+          if (file && typeof file !== "string") {
+            const ab = await file.arrayBuffer();
+            const buf = Buffer.from(ab);
+            const mime = file.type || "image/jpeg";
+            imagesList.push(`data:${mime};base64,${buf.toString("base64")}`);
+          } else if (file) {
+            imagesList.push(file.toString());
+          }
+        }
+        productData.images = imagesList;
+      }
+    } else {
+      productData = await req.json();
+    }
 
     // Validate Input
-    const { isValid, errors } = validateCreateProduct(body);
+    const { isValid, errors } = validateCreateProduct(productData);
     if (!isValid) {
       return errorResponse("Validation failed", 400, errors);
     }
 
-    const newProduct = await productService.createProduct(body);
+    const newProduct = await productService.createProduct(productData);
     return successResponse(newProduct, "Product created successfully", 201);
   } catch (error) {
     return errorResponse(error.message, 400);

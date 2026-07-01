@@ -41,6 +41,7 @@ async function main() {
     password: decodeURIComponent(dbUrl.password || ""),
     database: dbUrl.pathname.substring(1),
     connectionLimit: 5,
+    ssl: true,
   });
 
   const prisma = new PrismaClient({ adapter });

@@ -1,12 +1,104 @@
 import prisma from "@/lib/prisma";
 
 /**
+ * Parses a Base64 Data URL into its MIME type and binary buffer.
+ * @param {string} dataUrl
+ * @returns {Object|null}
+ */
+const parseDataUrl = (dataUrl) => {
+  if (!dataUrl || !dataUrl.startsWith("data:")) return null;
+  const matches = dataUrl.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+  if (!matches) return null;
+  return {
+    mimeType: matches[1],
+    buffer: Buffer.from(matches[2], "base64"),
+  };
+};
+
+/**
+ * Gets image buffer and MIME type from a URL or a Base64 string.
+ * @param {string} str
+ * @returns {Promise<Object|null>}
+ */
+export const getBufferFromUrlOrBase64 = async (str) => {
+  if (!str || typeof str !== "string") return null;
+  if (str.startsWith("data:")) {
+    const parsed = parseDataUrl(str);
+    return parsed || null;
+  }
+  if (str.startsWith("http://") || str.startsWith("https://")) {
+    try {
+      const res = await fetch(str);
+      if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+      const arrayBuffer = await res.arrayBuffer();
+      const contentType = res.headers.get("content-type") || "image/jpeg";
+      return {
+        mimeType: contentType,
+        buffer: Buffer.from(arrayBuffer),
+      };
+    } catch (err) {
+      console.error("Failed to fetch image from URL:", str, err);
+      return null;
+    }
+  }
+  return null;
+};
+
+/**
+ * Maps a database product model (with BLOB Bytes fields) to the expected API response format.
+ * Converts thumbnail and image buffers to base64 Data URLs.
+ * @param {Object} product
+ * @returns {Object|null}
+ */
+export const mapProductFromDb = (product) => {
+  if (!product) return null;
+  const mapped = { ...product };
+
+  if (mapped.thumbnail) {
+    const mime = mapped.thumbnail_mime || "image/jpeg";
+    mapped.thumbnail_url = `data:${mime};base64,${Buffer.from(mapped.thumbnail).toString("base64")}`;
+  } else {
+    mapped.thumbnail_url = null;
+  }
+
+  if (mapped.images) {
+    mapped.images = mapped.images.map((img) => {
+      const mappedImg = { ...img };
+      if (mappedImg.image) {
+        const mime = mappedImg.image_mime || "image/jpeg";
+        mappedImg.image_url = `data:${mime};base64,${Buffer.from(mappedImg.image).toString("base64")}`;
+      } else {
+        mappedImg.image_url = null;
+      }
+      delete mappedImg.image;
+      return mappedImg;
+    });
+  }
+
+  delete mapped.thumbnail;
+  return mapped;
+};
+
+/**
+ * Maps multiple database products.
+ * @param {Array} products
+ * @returns {Array}
+ */
+export const mapProductsFromDb = (products) => {
+  if (!products) return products;
+  if (Array.isArray(products)) {
+    return products.map(mapProductFromDb);
+  }
+  return mapProductFromDb(products);
+};
+
+/**
  * Find a product by its unique ID.
  * @param {string|number|BigInt} id
  * @returns {Promise<Object|null>}
  */
 export const findProductById = async (id) => {
-  return prisma.product.findUnique({
+  const product = await prisma.product.findUnique({
     where: { id: BigInt(id) },
     include: {
       category: true,
@@ -17,6 +109,7 @@ export const findProductById = async (id) => {
       },
     },
   });
+  return mapProductFromDb(product);
 };
 
 /**
@@ -25,7 +118,7 @@ export const findProductById = async (id) => {
  * @returns {Promise<Object|null>}
  */
 export const findProductBySlug = async (slug) => {
-  return prisma.product.findUnique({
+  const product = await prisma.product.findUnique({
     where: { slug },
     include: {
       category: true,
@@ -36,6 +129,7 @@ export const findProductBySlug = async (slug) => {
       },
     },
   });
+  return mapProductFromDb(product);
 };
 
 /**
@@ -66,7 +160,7 @@ export const findAllProducts = async (filters = {}) => {
     ];
   }
 
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where,
     include: {
       category: true,
@@ -80,6 +174,7 @@ export const findAllProducts = async (filters = {}) => {
       created_at: "desc",
     },
   });
+  return mapProductsFromDb(products);
 };
 
 /**
@@ -115,7 +210,22 @@ export const createProduct = async (productData) => {
     finalThumbnailUrl = firstImg.image_url || firstImg;
   }
 
-  return prisma.product.create({
+  const thumbResult = await getBufferFromUrlOrBase64(finalThumbnailUrl);
+
+  const resolvedImages = [];
+  for (const img of finalImages) {
+    const imgStr = img.image_url || img;
+    const res = await getBufferFromUrlOrBase64(imgStr);
+    if (res) {
+      resolvedImages.push({
+        buffer: res.buffer,
+        mimeType: res.mimeType,
+        display_order: img.display_order !== undefined ? img.display_order : undefined,
+      });
+    }
+  }
+
+  const product = await prisma.product.create({
     data: {
       category_id: BigInt(category_id),
       name,
@@ -126,11 +236,13 @@ export const createProduct = async (productData) => {
       gst: gst !== undefined ? gst : 0,
       quantity: parseInt(quantity, 10),
       sku,
-      thumbnail_url: finalThumbnailUrl || "",
+      thumbnail: thumbResult ? thumbResult.buffer : null,
+      thumbnail_mime: thumbResult ? thumbResult.mimeType : null,
       is_active: is_active !== undefined ? is_active : true,
       images: {
-        create: finalImages.map((img, idx) => ({
-          image_url: img.image_url || img,
+        create: resolvedImages.map((img, idx) => ({
+          image: img.buffer,
+          image_mime: img.mimeType,
           display_order: img.display_order !== undefined ? img.display_order : idx,
         })),
       },
@@ -140,6 +252,8 @@ export const createProduct = async (productData) => {
       images: true,
     },
   });
+
+  return mapProductFromDb(product);
 };
 
 /**
@@ -185,16 +299,24 @@ export const updateProduct = async (id, updateData) => {
     if (finalImages === undefined) {
       const currentProduct = await prisma.product.findUnique({
         where: { id: BigInt(id) },
-        include: { images: true }
+        include: { images: true },
       });
-      finalImages = currentProduct?.images.map(img => img.image_url) || [];
+      finalImages = currentProduct?.images.map(img => {
+        const mime = img.image_mime || "image/jpeg";
+        return `data:${mime};base64,${Buffer.from(img.image).toString("base64")}`;
+      }) || [];
     }
 
     if (finalThumbnailUrl === undefined) {
       const currentProduct = await prisma.product.findUnique({
-        where: { id: BigInt(id) }
+        where: { id: BigInt(id) },
       });
-      finalThumbnailUrl = currentProduct?.thumbnail_url || "";
+      if (currentProduct?.thumbnail) {
+        const mime = currentProduct.thumbnail_mime || "image/jpeg";
+        finalThumbnailUrl = `data:${mime};base64,${Buffer.from(currentProduct.thumbnail).toString("base64")}`;
+      } else {
+        finalThumbnailUrl = "";
+      }
     }
 
     // Now check sync
@@ -205,21 +327,42 @@ export const updateProduct = async (id, updateData) => {
       finalThumbnailUrl = firstImg.image_url || firstImg;
     }
 
+    const thumbResult = await getBufferFromUrlOrBase64(finalThumbnailUrl);
+    if (thumbResult) {
+      data.thumbnail = thumbResult.buffer;
+      data.thumbnail_mime = thumbResult.mimeType;
+    } else if (finalThumbnailUrl === "") {
+      data.thumbnail = null;
+      data.thumbnail_mime = null;
+    }
+
+    const resolvedImages = [];
+    for (const img of finalImages) {
+      const imgStr = img.image_url || img;
+      const res = await getBufferFromUrlOrBase64(imgStr);
+      if (res) {
+        resolvedImages.push({
+          buffer: res.buffer,
+          mimeType: res.mimeType,
+          display_order: img.display_order !== undefined ? img.display_order : undefined,
+        });
+      }
+    }
+
     await prisma.productImage.deleteMany({
       where: { product_id: BigInt(id) },
     });
 
     data.images = {
-      create: finalImages.map((img, idx) => ({
-        image_url: img.image_url || img,
+      create: resolvedImages.map((img, idx) => ({
+        image: img.buffer,
+        image_mime: img.mimeType,
         display_order: img.display_order !== undefined ? img.display_order : idx,
       })),
     };
-
-    data.thumbnail_url = finalThumbnailUrl;
   }
 
-  return prisma.product.update({
+  const updatedProduct = await prisma.product.update({
     where: { id: BigInt(id) },
     data,
     include: {
@@ -227,6 +370,8 @@ export const updateProduct = async (id, updateData) => {
       images: true,
     },
   });
+
+  return mapProductFromDb(updatedProduct);
 };
 
 /**
@@ -235,7 +380,6 @@ export const updateProduct = async (id, updateData) => {
  * @returns {Promise<Object>}
  */
 export const deleteProduct = async (id) => {
-  // ProductImages will be cascade deleted due to onDelete: Cascade in Prisma schema
   return prisma.product.delete({
     where: { id: BigInt(id) },
   });
@@ -260,7 +404,7 @@ export const bulkCreateProducts = async (products) => {
     for (const prod of products) {
       // 1. Verify category existence
       const category = await tx.category.findUnique({
-        where: { id: BigInt(prod.category_id) }
+        where: { id: BigInt(prod.category_id) },
       });
       if (!category) {
         throw new Error(`Category ID ${prod.category_id} not found for product "${prod.name}"`);
@@ -268,7 +412,7 @@ export const bulkCreateProducts = async (products) => {
 
       // 2. Verify slug uniqueness
       const existingSlug = await tx.product.findUnique({
-        where: { slug: prod.slug }
+        where: { slug: prod.slug },
       });
       if (existingSlug) {
         throw new Error(`Product with slug "${prod.slug}" already exists`);
@@ -276,23 +420,13 @@ export const bulkCreateProducts = async (products) => {
 
       // 3. Verify SKU uniqueness
       const existingSku = await tx.product.findUnique({
-        where: { sku: prod.sku }
+        where: { sku: prod.sku },
       });
       if (existingSku) {
         throw new Error(`Product with SKU "${prod.sku}" already exists`);
       }
 
-      // Let's align images list and thumbnail_url
-      let finalImages = prod.images ? [...prod.images] : [];
-      if (finalImages.length === 0 && prod.thumbnail_url) {
-        finalImages.push(prod.thumbnail_url);
-      }
-
-      let finalThumbnailUrl = prod.thumbnail_url;
-      if (!finalThumbnailUrl && finalImages.length > 0) {
-        const firstImg = finalImages[0];
-        finalThumbnailUrl = firstImg.image_url || firstImg;
-      }
+      const thumbResult = await getBufferFromUrlOrBase64(prod.thumbnail_url);
 
       // 4. Create Product
       const newProduct = await tx.product.create({
@@ -306,22 +440,18 @@ export const bulkCreateProducts = async (products) => {
           gst: prod.gst,
           quantity: prod.quantity,
           sku: prod.sku,
-          thumbnail_url: finalThumbnailUrl || "",
+          thumbnail: thumbResult ? thumbResult.buffer : null,
+          thumbnail_mime: thumbResult ? thumbResult.mimeType : null,
           is_active: prod.is_active,
-          images: {
-            create: finalImages.map((img, idx) => ({
-              image_url: img.image_url || img,
-              display_order: img.display_order !== undefined ? img.display_order : idx,
-            })),
-          },
         },
         include: {
           category: true,
           images: true,
-        }
+        },
       });
-      results.push(newProduct);
+      results.push(mapProductFromDb(newProduct));
     }
     return results;
   });
 };
+

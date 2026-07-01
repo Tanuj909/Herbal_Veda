@@ -209,7 +209,7 @@ export const bulkCreateProducts = async (productsArray) => {
       gst: item.gst !== undefined ? parseFloat(item.gst) : 0.00,
       quantity: parseInt(item.quantity, 10) || 0,
       sku,
-      thumbnail_url: item.thumbnail_url || "",
+      thumbnail_url: item.thumbnail || item.thumbnail_url || "",
       is_active: item.is_active !== undefined ? item.is_active : true,
       images: item.images || [],
     });

@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { mapProductFromDb } from "@/features/product/product.repository";
 
 /**
  * Find all wishlist items for a specific user.
@@ -7,7 +8,7 @@ import prisma from "@/lib/prisma";
  * @returns {Promise<Array>}
  */
 export const findWishlistByUserId = async (userId) => {
-  return prisma.wishlist.findMany({
+  const items = await prisma.wishlist.findMany({
     where: { user_id: BigInt(userId) },
     include: {
       product: {
@@ -24,6 +25,13 @@ export const findWishlistByUserId = async (userId) => {
     orderBy: {
       created_at: "desc",
     },
+  });
+
+  return items.map((item) => {
+    if (item.product) {
+      item.product = mapProductFromDb(item.product);
+    }
+    return item;
   });
 };
 
@@ -63,7 +71,7 @@ export const findWishlistItemByUserAndProduct = async (userId, productId) => {
  * @returns {Promise<Object>}
  */
 export const createWishlistItem = async (userId, productId) => {
-  return prisma.wishlist.create({
+  const item = await prisma.wishlist.create({
     data: {
       user_id: BigInt(userId),
       product_id: BigInt(productId),
@@ -81,6 +89,11 @@ export const createWishlistItem = async (userId, productId) => {
       },
     },
   });
+
+  if (item && item.product) {
+    item.product = mapProductFromDb(item.product);
+  }
+  return item;
 };
 
 /**
@@ -110,3 +123,4 @@ export const deleteWishlistItemByUserAndProduct = async (userId, productId) => {
     },
   });
 };
+
