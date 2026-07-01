@@ -146,111 +146,98 @@ function ProductsContent() {
       <Navbar />
 
       <main className="flex-grow w-full px-4 sm:px-8 md:px-12 pt-24 sm:pt-28 pb-16">
-        {/* Header & Controls Section */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-outline-variant/20 pb-6 mb-10">
-          {/* Page Title & Hero */}
-          <div className="flex-shrink-0">
-            <span className="text-tertiary font-label tracking-widest text-sm uppercase font-semibold">
-              Pure Botanicals
+        {/* Header Section */}
+        <header className="mb-8">
+          <span className="text-[10px] font-bold text-[#6B7A75] uppercase tracking-widest bg-[#E8EDEA]/50 px-2.5 py-1 rounded-md">
+            Explore Pleasure
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-light text-[#242926] mt-2 leading-tight">
+            Explore Our Products
+          </h1>
+        </header>
+
+        {/* Search Section */}
+        <section className="mb-6 max-w-md">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-[#6B7A75] pointer-events-none">
+              search
             </span>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl text-on-surface mt-1 leading-tight whitespace-nowrap">
-              Explore Our Products
-            </h1>
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-[#E8EDEA] rounded-xl text-xs bg-white focus:outline-none focus:border-[#2C3E37] focus:ring-1 focus:ring-[#2C3E37]/20 transition-all duration-300 placeholder:text-[#6B7A75]/50 shadow-3xs"
+            />
           </div>
+        </section>
 
-          {/* Search & Filters Container */}
-          <div className="flex-grow bg-white/80 backdrop-blur-md border border-[#E8EDEA] p-3 sm:p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center shadow-xs lg:max-w-[70%]">
-            {/* Search Input & Mobile Filter Icon Row */}
-            <div className="flex items-center gap-2 w-full md:max-w-[280px]">
-              <div className="relative flex-grow">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-[#6B7A75] pointer-events-none">
-                  search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search botanical treasures..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-[#E8EDEA] rounded-xl text-xs bg-white/50 focus:bg-white focus:outline-none focus:border-[#2C3E37] focus:ring-1 focus:ring-[#2C3E37]/20 transition-all duration-300 placeholder:text-[#6B7A75]/50"
-                />
-              </div>
-
-              {/* Filter Icon button (only visible next to search bar on mobile screens, hidden on desktop md+) */}
+        {/* Categories Section */}
+        <section className="mb-10 border-b border-[#E8EDEA]/60 pb-6 flex items-center gap-3">
+          {/* Category Filter Pills */}
+          <div className="overflow-x-auto no-scrollbar py-0.5 flex-grow">
+            <div className="flex gap-2 items-center min-w-max">
               <button
                 type="button"
-                onClick={() => setShowAllCategories(true)}
-                className="w-8 h-8 rounded-full bg-[#2C3E37]/10 text-[#2C3E37] hover:bg-[#2C3E37]/20 border border-transparent hover:border-[#2C3E37]/30 transition-all duration-300 cursor-pointer flex items-center justify-center shrink-0 md:hidden animate-fadeIn"
-                aria-label="Open Filters"
+                onClick={() => setSelectedCategory("")}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${
+                  selectedCategory === ""
+                    ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
+                    : "bg-white text-[#6B7A75] border border-[#E8EDEA]/60 hover:border-[#2C3E37]/30 hover:text-[#2C3E37]"
+                }`}
               >
-                <span className="material-symbols-outlined text-[18px]">tune</span>
+                All Products
               </button>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="w-full md:w-auto overflow-x-auto no-scrollbar py-0.5">
-              <div className="flex gap-2 items-center min-w-max">
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategory("")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
-                    selectedCategory === ""
-                      ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
-                      : "bg-[#F5F8F6] text-[#6B7A75] border border-[#E8EDEA]/60 hover:border-[#2C3E37]/30 hover:bg-white hover:text-[#2C3E37]"
-                  }`}
-                >
-                  All Products
-                </button>
-                {loadingCategories ? (
-                  <div className="h-7 bg-[#F5F8F6] w-24 rounded-full animate-pulse"></div>
-                ) : (
-                  <>
-                    {categories.slice(0, 4).map((cat) => (
-                      <button
-                        key={cat.id.toString()}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat.id.toString())}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
-                          selectedCategory === cat.id.toString()
-                            ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
-                            : "bg-[#F5F8F6] text-[#6B7A75] border border-[#E8EDEA]/60 hover:border-[#2C3E37]/30 hover:bg-white hover:text-[#2C3E37]"
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
-                    
-                    {/* If selected category is outside the first 5, show it in the main view too! */}
-                    {selectedCategory !== "" && !categories.slice(0, 5).some(c => c.id.toString() === selectedCategory) && (
-                      (() => {
-                        const selectedCat = categories.find(c => c.id.toString() === selectedCategory);
-                        return selectedCat ? (
-                          <button
-                            key={selectedCat.id.toString()}
-                            type="button"
-                            onClick={() => setSelectedCategory(selectedCat.id.toString())}
-                            className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
-                          >
-                            {selectedCat.name}
-                          </button>
-                        ) : null;
-                      })()
-                    )}
-
-                    {/* Filter Icon button (only visible on desktop md+, hidden on mobile) */}
+              {loadingCategories ? (
+                <div className="h-7 bg-[#F5F8F6] w-24 rounded-full animate-pulse"></div>
+              ) : (
+                <>
+                  {categories.slice(0, 8).map((cat) => (
                     <button
+                      key={cat.id.toString()}
                       type="button"
-                      onClick={() => setShowAllCategories(true)}
-                      className="w-8 h-8 rounded-full bg-[#2C3E37]/10 text-[#2C3E37] hover:bg-[#2C3E37]/20 border border-transparent hover:border-[#2C3E37]/30 transition-all duration-300 cursor-pointer hidden md:flex items-center justify-center shrink-0"
-                      aria-label="Open Filters"
+                      onClick={() => setSelectedCategory(cat.id.toString())}
+                      className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${
+                        selectedCategory === cat.id.toString()
+                          ? "bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
+                          : "bg-white text-[#6B7A75] border border-[#E8EDEA]/60 hover:border-[#2C3E37]/30 hover:text-[#2C3E37]"
+                      }`}
                     >
-                      <span className="material-symbols-outlined text-[18px]">tune</span>
+                      {cat.name}
                     </button>
-                  </>
-                )}
-              </div>
+                  ))}
+                  
+                  {/* If selected category is outside the first 8, show it in the main view too! */}
+                  {selectedCategory !== "" && !categories.slice(0, 8).some(c => c.id.toString() === selectedCategory) && (
+                    (() => {
+                      const selectedCat = categories.find(c => c.id.toString() === selectedCategory);
+                      return selectedCat ? (
+                        <button
+                          key={selectedCat.id.toString()}
+                          type="button"
+                          onClick={() => setSelectedCategory(selectedCat.id.toString())}
+                          className="px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer bg-[#2C3E37] text-white shadow-md shadow-[#2C3E37]/10"
+                        >
+                          {selectedCat.name}
+                        </button>
+                      ) : null;
+                    })()
+                  )}
+                </>
+              )}
             </div>
           </div>
-        </header>
+
+          {/* Filter tune button (visible on all screens) */}
+          <button
+            type="button"
+            onClick={() => setShowAllCategories(true)}
+            className="w-9 h-9 rounded-xl bg-white border border-[#E8EDEA] text-[#2C3E37] hover:bg-[#F5F8F6] hover:border-[#2C3E37]/30 transition-all duration-300 cursor-pointer flex items-center justify-center shrink-0 shadow-3xs"
+            aria-label="Open Filters"
+          >
+            <span className="material-symbols-outlined text-[18px]">tune</span>
+          </button>
+        </section>
 
         {/* Products Display */}
         {loadingProducts ? (
@@ -330,7 +317,7 @@ function ProductsContent() {
                       <button
                         type="button"
                         onClick={() => toggleWishlist(prod.id)}
-                        className={`absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs shadow-sm flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white cursor-pointer ${
+                        className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs shadow-sm flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white cursor-pointer ${
                           isFav
                             ? "text-red-500 opacity-100 bg-white"
                             : "text-[#6B7A75] hover:text-red-500 opacity-0 group-hover:opacity-100"
@@ -365,19 +352,13 @@ function ProductsContent() {
 
                     {/* Product Info */}
                     <div className="p-5 flex-1 flex flex-col">
-                      <div className="flex flex-col gap-1 mb-4">
-                        {/* <span className="text-[10px] font-semibold text-[#6B7A75]/80 uppercase tracking-widest">
-                          {prod.category?.name || "Botanical"}
-                        </span> */}
-                        <h3 className="text-sm sm:text-base font-semibold text-[#242926] line-clamp-2 group-hover:text-[#2C3E37] transition-colors leading-snug">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <h3 className="text-sm sm:text-base font-semibold text-[#242926] line-clamp-2 group-hover:text-[#2C3E37] transition-colors leading-snug flex-grow">
                           {prod.name}
                         </h3>
-                        <div className="flex items-baseline gap-1 mt-1">
-                          <span className="text-base sm:text-lg font-bold text-[#0D5C2F]">
-                            ₹{formattedPrice.toFixed(2)}
-                          </span>
-                          {/* <span className="text-[10px] text-[#6B7A75]">tax inc.</span> */}
-                        </div>
+                        <span className="text-base sm:text-lg font-bold text-[#0D5C2F] whitespace-nowrap flex-shrink-0 pt-0.5">
+                          ₹{formattedPrice.toFixed(2)}
+                        </span>
                       </div>
 
                       {/* Actions */}

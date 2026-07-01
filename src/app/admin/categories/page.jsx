@@ -238,17 +238,15 @@ export default function AdminCategoriesPage() {
           <div className="inline-flex items-center gap-2">
             <button
               onClick={() => handleOpenModal("edit", category)}
-              className="p-1 rounded-md text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-              title="Edit Details"
+              className="px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-base">edit</span>
+              Edit
             </button>
             <button
               onClick={() => handleDeleteCategory(category.id)}
-              className="p-1 rounded-md text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-              title="Delete"
+              className="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-base">delete</span>
+              Delete
             </button>
           </div>
         </td>

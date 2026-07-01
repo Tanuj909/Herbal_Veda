@@ -404,9 +404,6 @@ export default function AdminProductsPage() {
                         </div>
                         <div>
                           <div className="font-semibold text-on-surface text-xs leading-normal">{prod.name}</div>
-                          <div className="text-[10px] text-on-surface-variant font-light line-clamp-1 mt-0.5">
-                            {prod.short_description || "No description set"}
-                          </div>
                         </div>
                       </div>
                     </td>
@@ -464,17 +461,15 @@ export default function AdminProductsPage() {
                       <div className="inline-flex items-center gap-1">
                         <button
                           onClick={() => handleOpenModal("edit", prod)}
-                          className="p-1 rounded-md text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                          title="Edit Product"
+                          className="px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-base">edit</span>
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(prod.id)}
-                          className="p-1 rounded-md text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                          title="Delete Product"
+                          className="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-base">delete</span>
+                          Delete
                         </button>
                       </div>
                     </td>

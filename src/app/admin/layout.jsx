@@ -87,10 +87,12 @@ export default function AdminLayout({ children }) {
       {/* 1. Sidebar Navigation (Desktop) */}
       <aside className="hidden lg:flex flex-col w-64 bg-[#1E2E24] text-white border-r border-[#2C3E33]/30 shrink-0">
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center gap-2 px-6 border-b border-[#2C3E33]/30">
-          <span className="material-symbols-outlined text-[#c4a66a]" style={{ fontVariationSettings: "'FILL' 1" }}>
-            eco
-          </span>
+        <div className="h-16 flex items-center gap-3 px-6 border-b border-[#2C3E33]/30">
+          <img
+            src="/logo/logo.png"
+            alt="The Herbal Veda Logo"
+            className="w-8 h-8 object-contain bg-white/90 rounded-full p-0.5"
+          />
           <span className="font-headline font-bold text-base tracking-wide text-white">
             The Herbal Veda
           </span>
@@ -162,10 +164,12 @@ export default function AdminLayout({ children }) {
         }`}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-[#2C3E33]/30">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#c4a66a]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              eco
-            </span>
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo/logo.png"
+              alt="The Herbal Veda Logo"
+              className="w-8 h-8 object-contain bg-white/90 rounded-full p-0.5"
+            />
             <span className="font-headline font-bold text-base tracking-wide text-white">
               The Herbal Veda
             </span>
