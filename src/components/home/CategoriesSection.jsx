@@ -5,14 +5,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 
-const FALLBACK_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCuwkQSDXgTLiyu10lhaEXIJmB6LDXIfnUMlOd63VHTFTw7IVhvhhKe2S4oM_GGBN-RmGvrL50j_HuhQqYJLqlY0w0ciLsQGmT2wRCJ1XI7WPXdUqUdljwgMDbN3S3ARz3XkC57pHj1isSsYtuksUje6TTH0P9r16pYw-FjoQZHkmjQ1W44jbpwlv7ModQlS5dMUipHVICb1xXvI7AaK9u_40yT7i_D4Im-JoHUk-KLO3LxKKentyd3CLx4y8QP2uapdkGlUyUEHw",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCcaI4T-u30_FxIh5K_qvHXyQNwi4fSyxEJbD6wBkJ-tTfaxAnjA_gePQdDcZBlSMeLYTaZEXwA607olibzyHvztN5TvjmZ1uCuoJF4dG4pwV3OeZTjwqhsbj0KOZnUg4XgMj9hndZLTCz6XBobkwSYFF1nw2k3_F3pB6BHzC7u5mDSMLcFdzRu1BMz19p2qG6avqufdh1xN0vcPxad0QVDNS3BpaC7BomMxPFAQRnCeXHjJRsW1IfmyC0TAaUKVQBiUvESsT74UQ",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDHENy-BUdBgSrFm12opYoYJymFIiKIsAux9a0BpIkCn3AcyBYj-kW2bulgAoxGo3G9InjpiZN5gRtxbMmKGTaaxv5jYQGlgfHnREwgkWUZo2ErnNjVy2K8TKMP3sh-TNagfrJqgKqnok0Kp-slcMeWcLtCucb2L5JiVwn2ebsfq1xbX3JHJheSuTIRVGKCZZOYgA-7JpgJDzDBp6akBqcj--L5KfD7gLtr3fy6BRPo1ZCufs1rYH4Momxm5qGUih_ogCbFhr-3TQ",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBIssrPgo63hsKF1U88bhqIH4JNusvly441tjN71yj5gDSszT_ReTpTW5_MyXotPYGJoNMMgZ_E-SnopA0VbU7i_7F1mYxCNakQlZtMdn-H227YJCVf4G3F5ZAMtV-HIwVsun_gjxwcFlbyw8ona4hLzhA5BY58qX9DgIDInGYH_JBGGcG8fuIrqah4NQQ-nfVmY_dzi1CKtrwd2sJITrdRmzGgI-s0PDmuDIEmaGxz5pgefzYDC_uSyT8ppcVpmSd7xD1dCn82Ug",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA6-JbEzoFqdXjZ9AUw41CAtqd7l9XOatkPGmuqEbud87Nr4AIvm38wNPTHCIvJZXCrA5JC4a6hE5dBxJI44xv8aw_RRSCFdks4K6i3Fdf3xSNkRBHw771JCjpC9EhwQI8Ubzs1B-aV6dQY40_G7H5Q89Nk02n6A_bgIADWDLpcByRUU1KTaj4ct7sAUS2qBYWENMYpVa_EbWnEJsYqcFpoTfjxDqG7jt33RLLnqGu4oAra3iYCdTqHjI60LHONVHsdvXgHuRyzsg"
-];
-
 const getBentoClasses = (index) => {
   const mod = index % 5;
   switch (mod) {
@@ -109,7 +101,7 @@ export default function CategoriesSection() {
       try {
         const response = await axios.get("/api/categories?structure=flat");
         if (response.data && response.data.success && response.data.data.length > 0) {
-          const formatted = response.data.data.slice(0, 4).map((apiCat) => {
+          const formatted = response.data.data.slice(0, 10).map((apiCat) => {
             return {
               id: apiCat.id,
               name: apiCat.name,
@@ -145,7 +137,7 @@ export default function CategoriesSection() {
             <div className="h-5 bg-[#F5F8F6] rounded w-36 animate-pulse hidden sm:block"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[150px]">
-            {[0, 1, 2, 3].map((i) => {
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => {
               const layout = getBentoClasses(i);
               return (
                 <div
@@ -206,7 +198,7 @@ export default function CategoriesSection() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:auto-rows-[150px]">
             {categories.map((cat, index) => {
               const layout = getBentoClasses(index);
-              const imgUrl = cat.imageUrl || FALLBACK_IMAGES[index % 5];
+              const imgUrl = cat.imageUrl || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=600";
 
               return (
                 <ScrollReveal

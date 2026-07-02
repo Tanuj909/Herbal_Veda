@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 
 const ScrollReveal = ({ children, index, className = "", style = {} }) => {
@@ -51,9 +52,28 @@ const ScrollReveal = ({ children, index, className = "", style = {} }) => {
 };
 
 function ProductsContent() {
+  const router = useRouter();
+  const { user } = useAuth();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
   const searchParams = useSearchParams();
+
+  const handleBuyNow = async (product) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    await addToCart(product, 1);
+    router.push("/cart");
+  };
+
+  const handleToggleWishlist = (productId) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    toggleWishlist(productId);
+  };
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -122,6 +142,10 @@ function ProductsContent() {
   }, [searchQuery, selectedCategory]);
 
   const handleAddToCart = (product) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
     const productId = product.id.toString();
     if (addingId === productId) return;
     setAddingId(productId);
@@ -316,7 +340,7 @@ function ProductsContent() {
                       {/* Wishlist Toggle Button */}
                       <button
                         type="button"
-                        onClick={() => toggleWishlist(prod.id)}
+                        onClick={() => handleToggleWishlist(prod.id)}
                         className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs shadow-sm flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white cursor-pointer ${
                           isFav
                             ? "text-red-500 opacity-100 bg-white"
@@ -363,12 +387,13 @@ function ProductsContent() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2 mt-auto pt-4 border-t border-[#F0F3F1]">
-                        <Link
-                          href={`/product/${productId}`}
-                          className="flex-1 py-2.5 px-3 bg-[#F5F8F6] text-[#242926] text-xs font-medium rounded-xl text-center border border-transparent hover:border-[#2C3E37]/15 hover:bg-[#E8EDEA] transition-all duration-300"
+                        <button
+                          type="button"
+                          onClick={() => handleBuyNow(prod)}
+                          className="flex-1 py-2.5 px-3 bg-[#EAF2ED] text-[#0D5C2F] hover:bg-[#0D5C2F] hover:text-white text-xs font-semibold rounded-xl text-center transition-all duration-300 cursor-pointer"
                         >
-                          Details
-                        </Link>
+                          Buy Now
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleAddToCart(prod)}

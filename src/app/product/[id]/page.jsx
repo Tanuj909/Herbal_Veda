@@ -7,6 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 
 export default function ProductDetailsPage({ params }) {
@@ -15,6 +16,7 @@ export default function ProductDetailsPage({ params }) {
 
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [product, setProduct] = useState(null);
@@ -73,6 +75,10 @@ export default function ProductDetailsPage({ params }) {
   }, [productId]);
 
   const handleAddToCart = () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
     if (!product || addingToCart) return;
     setAddingToCart(true);
     addToCart(product, qty);
@@ -88,6 +94,10 @@ export default function ProductDetailsPage({ params }) {
   };
 
   const handleAddToCartRelated = (item) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
     const itemId = item.id.toString();
     if (addingId === itemId) return; // Prevent double trigger
     setAddingId(itemId);
@@ -100,6 +110,14 @@ export default function ProductDetailsPage({ params }) {
         setAddedIds((prev) => ({ ...prev, [itemId]: false }));
       }, 2000);
     }, 600);
+  };
+
+  const handleToggleWishlist = (productId) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    toggleWishlist(productId);
   };
 
   if (loadingProduct) {
@@ -260,7 +278,7 @@ export default function ProductDetailsPage({ params }) {
                 {/* Wishlist Button */}
                 <button
                   type="button"
-                  onClick={() => toggleWishlist(product.id)}
+                  onClick={() => handleToggleWishlist(product.id)}
                   className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
                     isFav
                       ? "bg-red-50 border-red-100 text-red-500 shadow-2xs"
@@ -359,7 +377,7 @@ export default function ProductDetailsPage({ params }) {
                       {/* Wishlist Toggle Button */}
                       <button
                         type="button"
-                        onClick={() => toggleWishlist(item.id)}
+                        onClick={() => handleToggleWishlist(item.id)}
                         className={`absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 shadow-2xs flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer ${
                           isItemFav
                             ? "text-red-500 opacity-100"

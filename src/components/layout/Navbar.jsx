@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
@@ -33,7 +34,7 @@ export default function Navbar() {
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [router.pathname]);
+  }, [pathname]);
 
   const handleLogout = () => {
     logout();
@@ -41,42 +42,66 @@ export default function Navbar() {
     router.push("/login");
   };
 
+  // Only show transparent navbar on the home page when not scrolled
+  const isHome = pathname === "/";
+  const isLightNavbar = !isHome || isScrolled;
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 font-label bg-white border-b border-[#E8EDEA]/50 transition-all duration-300 ${
-        isScrolled ? "shadow-sm" : ""
+      className={`fixed top-0 left-0 right-0 z-50 font-label transition-all duration-300 ${
+        isLightNavbar
+          ? "bg-white border-b border-[#E8EDEA]/50 shadow-sm"
+          : "bg-transparent border-b border-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16 lg:h-[72px]">
         {/* Left: Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <img
-            src="/logo/logo.png"
-            alt="The Herbal Veda Logo"
-            className="w-12 h-12 sm:w-14 sm:h-14 object-contain mix-blend-multiply"
-          />
-          <span className="font-headline text-base sm:text-lg lg:text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#0D5C2F] to-[#4A8F3B] bg-clip-text text-transparent whitespace-nowrap">
+        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden border border-[#E8EDEA]/20 flex-shrink-0">
+            <img
+              src="/logo/logo.png"
+              alt="The Herbal Veda Logo"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply"
+            />
+          </div>
+          <span className={`font-headline text-base sm:text-lg lg:text-xl font-extrabold tracking-tight bg-gradient-to-r bg-clip-text text-transparent whitespace-nowrap transition-all duration-300 ${
+            isLightNavbar
+              ? "from-[#031F0F] to-[#1A3D14]"
+              : "from-[#1E824C] to-[#145A32]"
+          }`}>
             The Herbal Veda
           </span>
         </Link>
 
         {/* Center: Main Navigation (Desktop) */}
-        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+        <div className="hidden md:flex items-center gap-6 lg:gap-8 h-full">
           <Link
             href="/"
-            className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
+            className={`text-sm font-medium transition-colors duration-300 ${
+              isLightNavbar
+                ? "text-[#242926] hover:text-[#2C3E37]"
+                : "text-white hover:text-[#E8F5E9]"
+            }`}
           >
             Shop
           </Link>
           <Link
             href="/products"
-            className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
+            className={`text-sm font-medium transition-colors duration-300 ${
+              isLightNavbar
+                ? "text-[#242926] hover:text-[#2C3E37]"
+                : "text-white hover:text-[#E8F5E9]"
+            }`}
           >
             Products
           </Link>
           <Link
             href="/categories"
-            className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
+            className={`text-sm font-medium transition-colors duration-300 ${
+              isLightNavbar
+                ? "text-[#242926] hover:text-[#2C3E37]"
+                : "text-white hover:text-[#E8F5E9]"
+            }`}
           >
             Categories
           </Link>
@@ -84,13 +109,21 @@ export default function Navbar() {
             <>
               <Link
                 href="/orders"
-                className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
+                className={`text-sm font-medium transition-colors duration-300 ${
+                  isLightNavbar
+                    ? "text-[#242926] hover:text-[#2C3E37]"
+                    : "text-white hover:text-[#E8F5E9]"
+                }`}
               >
                 My Orders
               </Link>
               <Link
                 href="/addresses"
-                className="text-sm font-medium text-[#242926] hover:text-[#2C3E37] transition-colors"
+                className={`text-sm font-medium transition-colors duration-300 ${
+                  isLightNavbar
+                    ? "text-[#242926] hover:text-[#2C3E37]"
+                    : "text-white hover:text-[#E8F5E9]"
+                }`}
               >
                 Addresses
               </Link>
@@ -99,17 +132,16 @@ export default function Navbar() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-          {/* Search Icon (Desktop only) */}
-          {/* <button className="hidden sm:flex text-[#6B7A75] hover:text-[#2C3E37] p-1.5 sm:p-2 transition-colors cursor-pointer rounded-lg hover:bg-[#F5F8F6]">
-            <span className="material-symbols-outlined text-xl sm:text-2xl">search</span>
-          </button> */}
-
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
           {/* Wishlist - Desktop only */}
           {user && (
             <Link
               href="/wishlist"
-              className="hidden sm:flex text-[#6B7A75] hover:text-[#2C3E37] p-1.5 sm:p-2 transition-colors relative items-center rounded-lg hover:bg-[#F5F8F6]"
+              className={`hidden sm:flex p-1.5 sm:p-2 transition-colors relative items-center rounded-lg hover:bg-black/5 ${
+                isLightNavbar
+                  ? "text-[#6B7A75] hover:text-[#2C3E37]"
+                  : "text-white hover:text-[#E8F5E9]"
+              }`}
               aria-label="Wishlist"
             >
               <span className="material-symbols-outlined text-xl sm:text-2xl">favorite</span>
@@ -125,7 +157,11 @@ export default function Navbar() {
           {user && (
             <Link
               href="/cart"
-              className="hidden sm:flex text-[#6B7A75] hover:text-[#2C3E37] p-1.5 sm:p-2 transition-colors relative items-center rounded-lg hover:bg-[#F5F8F6]"
+              className={`hidden sm:flex p-1.5 sm:p-2 transition-colors relative items-center rounded-lg hover:bg-black/5 ${
+                isLightNavbar
+                  ? "text-[#6B7A75] hover:text-[#2C3E37]"
+                  : "text-white hover:text-[#E8F5E9]"
+              }`}
               aria-label="Shopping Cart"
             >
               <span className="material-symbols-outlined text-xl sm:text-2xl">
@@ -140,12 +176,12 @@ export default function Navbar() {
           )}
 
           {/* User Profile / Login */}
-          <div className="relative">
+          <div className="flex items-center">
             {user ? (
-              <>
+              <div className="relative">
                 <button
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1 rounded-full hover:bg-[#F5F8F6] transition-colors cursor-pointer border border-transparent hover:border-[#E8EDEA]"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 rounded-full hover:bg-black/5 transition-colors cursor-pointer border border-transparent"
                   aria-label="User profile menu"
                 >
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#F0F3F1] text-[#2C3E37] flex items-center justify-center text-xs sm:text-sm font-bold uppercase">
@@ -196,16 +232,17 @@ export default function Navbar() {
                     </div>
                   </>
                 )}
-              </>
+              </div>
             ) : (
               <Link
                 href="/login"
-                className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full text-[#6B7A75] hover:text-[#2C3E37] hover:bg-[#F5F8F6] transition-all duration-200"
-                aria-label="Log in"
+                className={`inline-flex items-center justify-center px-4 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow ${
+                  isLightNavbar
+                    ? "bg-[#2C3E37] text-white hover:bg-[#1E2D27]"
+                    : "bg-white text-[#2C3E37] hover:bg-gray-100"
+                }`}
               >
-                <span className="material-symbols-outlined text-2xl sm:text-2.5xl">
-                  account_circle
-                </span>
+                Sign In
               </Link>
             )}
           </div>
@@ -213,7 +250,11 @@ export default function Navbar() {
           {/* Mobile Menu Icon (Hamburger) - Always visible on mobile */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden text-[#242926] hover:text-[#2C3E37] p-1.5 transition-colors cursor-pointer rounded-lg hover:bg-[#F5F8F6]"
+            className={`md:hidden p-1.5 transition-colors cursor-pointer rounded-lg hover:bg-black/5 ${
+              isLightNavbar || isMobileMenuOpen
+                ? "text-[#242926] hover:text-[#2C3E37]"
+                : "text-white hover:text-[#E8F5E9]"
+            }`}
             aria-label="Toggle Navigation Menu"
           >
             <span className="material-symbols-outlined text-2xl">

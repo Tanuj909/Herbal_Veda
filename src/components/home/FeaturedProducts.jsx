@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function FeaturedProducts() {
+  const router = useRouter();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const [products, setProducts] = useState([]);
@@ -47,6 +51,11 @@ export default function FeaturedProducts() {
   }, []);
 
   const handleAddToCart = (productId) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
     const product = products.find((p) => p.id === productId);
     if (!product || addingId === productId) return;
 
@@ -60,6 +69,27 @@ export default function FeaturedProducts() {
         setAddedIds((prev) => ({ ...prev, [productId]: false }));
       }, 2000);
     }, 600);
+  };
+
+  const handleBuyNow = async (productId) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+    
+    await addToCart(product, 1);
+    router.push("/cart");
+  };
+
+  const handleToggleWishlist = (productId) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    toggleWishlist(productId);
   };
 
   if (loading) {
@@ -151,7 +181,7 @@ export default function FeaturedProducts() {
                   {/* Wishlist Button */}
                   <button
                     type="button"
-                    onClick={() => toggleWishlist(prod.id)}
+                    onClick={() => handleToggleWishlist(prod.id)}
                     className={`absolute top-3 right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 shadow-sm flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer ${
                       isInWishlist(prod.id)
                         ? "text-red-500 opacity-100"
@@ -189,12 +219,13 @@ export default function FeaturedProducts() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 mt-auto pt-3 border-t border-[#F0F3F1]">
-                    <Link
-                      href={`/product/${prod.id}`}
-                      className="flex-1 py-2 px-3 bg-[#F5F8F6] text-[#242926] text-xs font-medium rounded-lg text-center hover:bg-[#E8EDEA] transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => handleBuyNow(prod.id)}
+                      className="flex-1 py-2 px-3 bg-[#EAF2ED] text-[#0D5C2F] hover:bg-[#0D5C2F] hover:text-white text-xs font-semibold rounded-lg text-center transition-all duration-200 cursor-pointer"
                     >
-                      View Product
-                    </Link>
+                      Buy Now
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleAddToCart(prod.id)}
